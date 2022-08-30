@@ -21,7 +21,7 @@ scr_width  = 800
 scr_height = 480
 
 # use GPIO for FAN, LED and EXT Trigger
-use_gpio = 1
+use_gpio = 0
 
 # save MP4 to SD / USB, 0 = SD Card, 1 = USB 
 movtousb = 0
