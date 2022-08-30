@@ -640,7 +640,7 @@ while True:
                    timer10 = time.monotonic()
                 if menu == 0:
                     text(0,1,1,0,1,"Low Detect "  + str(int((sar5/diff) * 100)) + "%",14,7)
-                if Capture == 1 or record == 1 or GPIO.input(ext_trig) == 0:
+                if Capture == 1 or record == 1:
                     detect = 1
                     record = 0
                     if ES > 0 and use_gpio == 1: # trigger external camera
