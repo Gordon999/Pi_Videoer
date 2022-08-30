@@ -2,6 +2,10 @@
 
 A python script to capture images either triggered by motion or timelapse. It can capture either videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files, or still photos.
 
+## Screenshot
+
+![screenshot](screen001.jpg)
+
 To install:
 
 Install latest RaspiOS based on Bullseye (tested with FULL 32bit version)
@@ -36,4 +40,4 @@ VIDEOS / PICTURES - Choose to capture Videos or Still Pictures, shows number sto
 
 SD HOUR - will shutdown at this time. set to 0 to disable.
 
-COPY / EXIT - COPY will copy all stored JPGs (Video and Pictures) to USB. EXIT o exit script.
+COPY / EXIT - COPY will copy all stored JPGs (Video and Pictures) to USB. EXIT to exit script.
