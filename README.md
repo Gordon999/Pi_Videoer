@@ -1,6 +1,7 @@
 # Pi_Videoer
 
-A python script to capture images either triggered by motion or timelapse. It can capture either videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files, or still photos.
+A python script to capture images either triggered by motion or timelapse. Uses Raspberry OS BULLSEYE and libcamera-vid / still.
+It can capture either videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files, or still photos at full resolution.
 
 ## Screenshot
 
