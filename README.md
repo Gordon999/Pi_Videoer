@@ -3,6 +3,8 @@
 A python script to capture images either triggered by motion or timelapse. Uses Raspberry OS BULLSEYE and libcamera-vid / still.
 It can capture either videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files, or still photos at full resolution.
 
+Pi4 recommended, which may need a fan for cooling due to high use of cpu.
+
 ## Screenshot
 
 ![screenshot](screen001.jpg)
