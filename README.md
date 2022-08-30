@@ -11,7 +11,7 @@ Pi4 recommended, which may need a fan for cooling due to high use of cpu.
 
 To install:
 
-Install latest RaspiOS based on Bullseye (tested with FULL 32bit version)
+Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit version)
 
 sudo apt install python3-opencv
 
