@@ -429,7 +429,7 @@ Camera_start(cap_width,cap_height,zoom,vid_pic)
 fan_timer = time.monotonic()
 
 while True:
-    time.sleep(0.03)
+    time.sleep(0.25)
     # fan ctrl
     if time.monotonic() - fan_timer > fan_time:
         if os.path.exists("sync.txt"):
@@ -662,7 +662,7 @@ while True:
                         start = time.monotonic()
                         fx = 1
                         while time.monotonic() - start < v_length/1000:
-                            pass
+                            time.sleep(0.1)
                         # rename pre-frames
                         if trace == 1:
                             print ("Step 7 RENAME PRE")
