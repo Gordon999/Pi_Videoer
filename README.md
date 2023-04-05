@@ -25,7 +25,7 @@ CAPTURE - switch capturing ON / OFF
 
 RECORD  - click to capture a video
 
-DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds (set Lo Threshold to 0 for Timelapse), Detection levels, Area of detection, Colour Filter (R/G/B/FULL),Zoom (to help focusing), Noise Reduction (OFF/LOW/HIGH).
+DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds, Detection levels, Area of detection, Colour Filter (R/G/B/FULL),Zoom (to help focusing), Noise Reduction (OFF/LOW/HIGH).
 
 CAMERA SETTINGS 1 -  Camera Controls
 
