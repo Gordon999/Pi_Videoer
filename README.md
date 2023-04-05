@@ -9,7 +9,7 @@ Pi4 recommended.
 
 ## Screenshot
 
-![screenshot](screen001.jpg)
+![screenshot](screen002.jpg)
 
 To install:
 
