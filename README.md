@@ -17,7 +17,7 @@ Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit and 64bit 
 
 sudo apt install python3-opencv
 
-Download Pi_Videoer.py and copy to /home/pi (assuming your username is pi)
+Download PiVideoer.py and copy to /home/pi (assuming your username is pi)
 
 MAIN MENU
 
