@@ -35,10 +35,10 @@ CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera), Square Format video, S
 
 OTHER SETTINGS    - Auto Limit, RAM limit, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB
 
-SHOW & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL from START /to END , DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames), MAKE MP4 menu
+SHOW, DELETE & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL from START /to END , DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames), MAKE MP4 menu
 
 MAKE MP4  - Set MP4 FPS, VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL from START / to END , MAKE A MP4 (makes an mp4 from chosen video), MAKE ALL MP4s (makes seperate MP4s from ALL Videos), MAKE FULL MP4 (Makes a MP4 from ALL Videos), MOVE MP4s to USB (moves MP4s from SD card to USB if installed), MP4 Annotate with date and time
 
 SD HOUR - will shutdown at this time. set to 0 to disable.
 
-EXIT - EXIT to exit script.
+EXIT - EXIT to exit script. ALWAYS USE THIS TO EXIT, OR You will need to reboot your pi.
