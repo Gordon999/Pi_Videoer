@@ -1,11 +1,11 @@
 # Pi_Videoer
 
-A python script to capture images either triggered by motion or timelapse. Uses Raspberry OS BULLSEYE and libcamera-vid / still.
-It can capture either videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files, or still photos at full resolution.
+A python script to capture images triggered by motion . Uses Raspberry OS BULLSEYE and libcamera-vid / still.
+It can capture videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files.
 
-lt has some editing facilities, delete individual frames or delete all frames to end of video.
+lt has some editing facilities, delete individual frames or delete all frames from start or to end of video.
 
-Pi4 recommended, which may need a fan for cooling due to high use of cpu.
+Pi4 recommended.
 
 ## Screenshot
 
@@ -23,22 +23,22 @@ MAIN MENU
 
 CAPTURE - switch capturing ON / OFF
 
-RECORD  - click to capture a video or still picture
+RECORD  - click to capture a video
 
-DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds (set Lo Threshold to 0 for Timelapse), Detection levels, Area of detection, Interval (set for Timelapse), Zoom (to help focusing, shows a focus value.).
+DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds (set Lo Threshold to 0 for Timelapse), Detection levels, Area of detection, Colour Filter (R/G/B/FULL),Zoom (to help focusing), Noise Reduction (OFF/LOW/HIGH).
 
-CAMERA SETTINGS 1 - Colour filter (R/G/B/FULL), Camera Controls, Video Length
+CAMERA SETTINGS 1 -  Camera Controls
 
-CAMERA SETTINGS 2 - Video Format, Camera Controls
+CAMERA SETTINGS 2 - Video Format, Video Length,Vidseo pre-frames, more Camera Controls, Interval
 
-OTHER SETTINGS    - FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Pi v3 camera focus auto / manual
+CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera), Square Format video, SF Position, Detection Speed
 
-SHOW & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL to END (Deletes from selected frame to end of video), DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames)
+OTHER SETTINGS    - Auto Limit, RAM limit, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB
 
-MAKE MP4  - VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL to END (Deletes from selected frame to end of video), MAKE A MP4 (makes an mp4 from chosen video), MAKE ALL MP4s (makes seperate MP4s from ALL Videos), MAKE FULL MP4 (Makes a MP4 from ALL Videos), MOVE MP4s to USB (moves MP4s from SD card to USB if installed)
+SHOW & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL from START /to END , DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames), MAKE MP4 menu
 
-VIDEOS / PICTURES - Choose to capture Videos or Still Pictures, shows number stored in RAM and on SD CARD
+MAKE MP4  - Set MP4 FPS, VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL from START / to END , MAKE A MP4 (makes an mp4 from chosen video), MAKE ALL MP4s (makes seperate MP4s from ALL Videos), MAKE FULL MP4 (Makes a MP4 from ALL Videos), MOVE MP4s to USB (moves MP4s from SD card to USB if installed), MP4 Annotate with date and time
 
 SD HOUR - will shutdown at this time. set to 0 to disable.
 
-COPY / EXIT - COPY will copy all stored JPGs (Video and Pictures) to USB. EXIT to exit script.
+EXIT - EXIT to exit script.
