@@ -13,7 +13,7 @@ Pi4 recommended.
 
 To install:
 
-Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit version)
+Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit and 64bit versions)
 
 sudo apt install python3-opencv
 
