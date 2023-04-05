@@ -29,7 +29,7 @@ DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds, D
 
 CAMERA SETTINGS 1 -  Camera Controls
 
-CAMERA SETTINGS 2 - Video Format, Video Length,Vidseo pre-frames, more Camera Controls, Interval
+CAMERA SETTINGS 2 - Video Format, Video Length,Video pre-frames, more Camera Controls, Interval
 
 CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera), Square Format video, SF Position, Detection Speed
 
