@@ -5,7 +5,7 @@ It can capture videos as still frames, upto 30fps at 1920 x 1080, which can be c
 
 lt has some editing facilities, delete individual frames or delete all frames from start or to end of video.
 
-Pi4 recommended.
+Pi4 recommended, with RaspiOS 64bit.
 
 ## Screenshot
 
