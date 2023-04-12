@@ -11,6 +11,10 @@ Pi4 recommended, with RaspiOS 64bit.
 
 ![screenshot](screen002.jpg)
 
+## Menu structure
+
+![Menus](MENUS.jpg)
+
 To install:
 
 Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit and 64bit versions)
