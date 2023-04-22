@@ -29,15 +29,15 @@ CAPTURE - switch capturing ON / OFF
 
 RECORD  - click to capture a video
 
-DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds, Detection levels, Area of detection, Colour Filter (R/G/B/FULL),Zoom (to help focusing), Noise Reduction (OFF/LOW/HIGH).
+DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds, Detection levels, Area of detection, Detection Speed (1-100), Colour Filter (R/G/B/FULL), Noise Reduction (OFF/LOW/HIGH).
 
 CAMERA SETTINGS 1 -  Camera Controls
 
-CAMERA SETTINGS 2 - Video Format, Video Length,Video pre-frames, more Camera Controls, Interval
+CAMERA SETTINGS 2 - Video Format, Video Length,Video pre-frames, more Camera Controls, Interval (delay before being re-triggered)
 
-CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera), Square Format video, SF Position, Detection Speed
+CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera),Zoom (to help focusing), Square Format video, SF Position
 
-OTHER SETTINGS    - Auto Limit, RAM limit, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB
+OTHER SETTINGS    - Auto Limit, RAM limit (MB),SD Card Limit (%), SD FULL Action, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB
 
 SHOW, EDIT & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (advance by single frames), DELETE FRAME, DEL from START /to END , DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames), MAKE MP4 menu
 
