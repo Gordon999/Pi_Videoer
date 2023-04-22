@@ -13,7 +13,7 @@ Pi4 recommended, with RaspiOS 64bit.
 
 ## Menu structure
 
-![Menus](MENUS.jpg)
+![Menus](menus.jpg)
 
 To install:
 
