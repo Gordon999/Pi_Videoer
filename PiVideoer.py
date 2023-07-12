@@ -2834,7 +2834,7 @@ while True:
                       image = pygame.image.load('/run/shm/' + outvids[0] + "_00001.jpg")
                   fwidth = image.get_width()
                   fheight = image.get_height()
-                  out = cv2.VideoWriter(logfile,cv2.VideoWriter_fourcc(*'H264'),mp4_fps, (fwidth,fheight))
+                  out = cv2.VideoWriter(logfile,cv2.VideoWriter_fourcc(*'MJPG'),mp4_fps, (fwidth,fheight))
                   
                   for w in range(0,len(outvids)):
                     if os.path.exists('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_99999.jpg"):
@@ -3333,8 +3333,8 @@ while True:
                         text(0,5,2,1,1,"MP4",14,7)
                         text(0,6,2,0,1,"MAKE ALL",14,7)
                         text(0,6,2,1,1,"MP4s",14,7)
-                        #text(0,7,2,0,1,"MAKE FULL",14,7)
-                        #text(0,7,2,1,1,"MP4",14,7)
+                        text(0,7,2,0,1,"MAKE FULL",14,7)
+                        text(0,7,2,1,1,"MP4",14,7)
                         USB_Files  = []
                         USB_Files  = (os.listdir("/media/" + h_user[0]))
                         Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
