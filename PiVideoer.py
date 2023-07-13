@@ -13,7 +13,7 @@ import glob
 import RPi.GPIO as GPIO
 from gpiozero import CPUTemperature
 
-# v1.057
+# v1.059
 
 # set screen size
 scr_width  = 800
@@ -2692,15 +2692,22 @@ while True:
                   pygame.display.update()
                   outvids = []
                   mp4vids = []
+                  txtvids = []
                   z = ""
                   y = ""
                   for x in range(0,len(Sideos)):
                       Tideos = Sideos[x].split("/")
                       if Tideos[len(Tideos) - 1][:-10] != z:
+
                           z = Tideos[len(Tideos) - 1][:-10]
+                          txt = "file '/home/" + h_user[0] + "/Videos/" + z + ".mp4'"
                           y = Tideos[len(Tideos) - 2]
                           outvids.append(z)
                           mp4vids.append(y)
+                          txtvids.append(txt)
+                  with open('mylist.txt', 'w') as f:
+                      for item in txtvids:
+                          f.write("%s\n" % item)
                   for w in range(0,len(outvids)):
                     if os.path.exists('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_99999.jpg"):
                         image = pygame.image.load('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_99999.jpg")
@@ -2734,10 +2741,10 @@ while True:
                     logfile = new_dir + "/" + str(outvids[w]) + ".mp4"
                     if os.path.exists(logfile):
                         os.remove(logfile)
-                    if mp4vids[q] == "Pictures":
-                        cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /home/' + h_user[0] + '/Pictures/' + str(outvids[q]) + '_%5d.jpg '
-                    elif mp4vids[q] == "shm":
-                        cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /run/shm/' + str(outvids[q]) + '_%5d.jpg '
+                    if mp4vids[w] == "Pictures":
+                        cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /home/' + h_user[0] + '/Pictures/' + str(outvids[w]) + '_%5d.jpg '
+                    elif mp4vids[w] == "shm":
+                        cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /run/shm/' + str(outvids[w]) + '_%5d.jpg '
                     if anno == 1:
                         cmd += '-vf drawtext="fontsize=15:fontfile=/Library/Fonts/DroidSansMono.ttf:\ '
                         cmd += "timecode='  " + str(hour) +"\:" + str(mins) + "\:" + str(secs) + "\:00':rate=" + str(mp4_fps) + ":text=" + str(days)+"/"+str(mths)+"/"+str(year)+"--"
@@ -2756,6 +2763,11 @@ while True:
                              windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
                              pygame.display.update()
                              time.sleep(5)
+                  # make FULL MP4 from ALL MP4s
+                  outfile = new_dir + "/" + str(outvids[0]) + "f.mp4"
+                  if os.path.exists(outfile):
+                        os.remove(outfile)
+                  os.system('ffmpeg -f concat -safe 0 -i mylist.txt -c copy ' + outfile)
                   Videos = glob.glob('/home/' + h_user[0] + '/Pictures/*.jpg')
                   USB_Files  = (os.listdir("/media/" + h_user[0]))
                   if len(USB_Files) > 0:
@@ -2796,167 +2808,6 @@ while True:
                   restart = 1
                   USB_Files  = (os.listdir("/media/" + h_user[0]))
                   Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
-                  if use_gpio == 1:
-                      pwm.ChangeDutyCycle(dc)
-
-                elif g == 7 and menu == 5 and show == 1 and ((len(USB_Files) > 0 and movtousb == 1) or movtousb == 0):
-                 # MAKE FULL MP4
-                 Sideos = glob.glob('/home/' + h_user[0] + '/Pictures/*.jpg')
-                 Rideos = glob.glob('/run/shm/2*.jpg')
-                 for x in range(0,len(Rideos)-1):
-                     Sideos.append(Rideos[x])
-                 if len(USB_Files) > 0:
-                        Uideos = glob.glob('/media/' + h_user[0] + "/" + USB_Files[0] + "/Pictures/*.jpg")
-                        Uideos.sort()
-                        for x in range(0,len(Uideos)-1):
-                            Sideos.append(Uideos[x])
-                 Sideos.sort()    
-                 if len(Sideos) > 0:
-                  if use_gpio == 1:
-                      pwm.ChangeDutyCycle(100)
-                  frame = 0
-                  text(0,7,3,0,1,"MAKING FULL",13,7)
-                  text(0,7,3,1,1,"MP4",14,7)
-                  pygame.display.update()
-                  outvids = []
-                  z = ""
-                  y = ""
-                  for x in range(0,len(Sideos)):
-                      Tideos = Sideos[x].split("/")
-                      if Tideos[len(Tideos) - 1][:-10] != z:
-                          z = Tideos[len(Tideos) - 1][:-10]
-                          outvids.append(z)
-                  if movtousb == 1:
-                      new_dir = '/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos"
-                  else:
-                      new_dir = '/home/' + h_user[0] + "/Videos"
-                  if not os.path.exists(new_dir):
-                      os.system('mkdir ' + "/" + new_dir)
-                  logfile = new_dir + "/" + str(outvids[0]) + ".mp4"
-                  if os.path.exists('/home/' + h_user[0] + '/Pictures/' + outvids[0] + "_99999.jpg"):
-                      image = pygame.image.load('/home/' + h_user[0] + '/Pictures/' + outvids[0] + "_99999.jpg")
-                  elif os.path.exists('/home/' + h_user[0] + '/Pictures/' + outvids[0] + "_00001.jpg"):
-                      image = pygame.image.load('/home/' + h_user[0] + '/Pictures/' + outvids[0] + "_00001.jpg")
-                  elif os.path.exists('/run/shm/' + outvids[0] + "_99999.jpg"):
-                      image = pygame.image.load('/run/shm/' + outvids[0] + "_99999.jpg")
-                  elif os.path.exists('/run/shm/' + outvids[0] + "_00001.jpg"):
-                      image = pygame.image.load('/run/shm/' + outvids[0] + "_00001.jpg")
-                  fwidth = image.get_width()
-                  fheight = image.get_height()
-                  out = cv2.VideoWriter(logfile,cv2.VideoWriter_fourcc(*'MJPG'),mp4_fps, (fwidth,fheight))
-                  
-                  for w in range(0,len(outvids)):
-                    if os.path.exists('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_99999.jpg"):
-                        image = pygame.image.load('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_99999.jpg")
-                    elif os.path.exists('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_00001.jpg"):
-                        image = pygame.image.load('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "_00001.jpg")
-                    elif os.path.exists('/run/shm/' + outvids[w] + "_99999.jpg"):
-                        image = pygame.image.load('/run/shm/' + outvids[w] + "_99999.jpg")
-                    elif os.path.exists('/run/shm/' + outvids[w] + "_00001.jpg"):
-                        image = pygame.image.load('/run/shm/' + outvids[w] + "_00001.jpg")
-                    if fwidth == image.get_width() and fheight == image.get_height():
-                      imageo = pygame.transform.scale(image, (xwidth,xheight))
-                      windowSurfaceObj.blit(imageo, (0, 0))
-                      if square == 1:
-                          pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(xheight,0,int(xheight/2.3),xheight))
-                      fontObj = pygame.font.Font(None, 25)
-                      msgSurfaceObj = fontObj.render(str(outvids[w] + " " + str(w+1) + "/" + str(len(outvids))), False, (255,0,0))
-                      msgRectobj = msgSurfaceObj.get_rect()
-                      msgRectobj.topleft = (0,10)
-                      windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
-                      text(0,1,3,1,1,str(w+1) + " / " + str(ram_frames + frames),14,7)
-                      pygame.display.update()
-                      year = 2000 + int(outvids[w][0:2])
-                      mths = int(outvids[w][2:4])
-                      days = int(outvids[w][4:6])
-                      hour = int(outvids[w][6:8])
-                      mins = int(outvids[w][8:10])
-                      secs = int(outvids[w][10:12])
-                      zpics = glob.glob('/home/' + h_user[0] + '/Pictures/' + outvids[w] + "*.jpg")
-                      rpics = glob.glob('/run/shm/' + outvids[w] +  '*.jpg')
-                      for x in range(0,len(rpics)-1):
-                        zpics.append(rpics[x])
-                      USB_Files  = (os.listdir("/media/" + h_user[0]))
-                      if len(USB_Files) > 0:
-                        upics = glob.glob('/media/' + h_user[0] + "/" + USB_Files[0] + "/Pictures/*.jpg")
-                        upics.sort()
-                        for x in range(0,len(upics)-1):
-                            zpics.append(upics[x])
-                      zpics.sort()
-                      for xx in range(0,len(zpics)-1):
-                        if anno == 1:
-                          secs += 1/fps
-                          if secs >= 60:
-                            secs = 0
-                            mins += 1
-                            if mins >= 60:
-                                mins = 0
-                                hour +=1
-                                if hour >= 24:
-                                    hour = 0
-                                    days +=1
-                                    max_d = max_days[mths]
-                                    if (year/4) - int(year/4) == 0 and mths == 2:
-                                        max_d == 29
-                                    if days > max_d:
-                                        days = 1
-                                        mths +=1
-                                        if mths > 12:
-                                            mths = 1
-                                            year +=1
-                          show_time = ("0" + str(days))[-2:] + "/" + ("0" + str(mths))[-2:] + "/" + str(year) + " " + ("0" + str(hour))[-2:] + ":" + ("0" + str(mins))[-2:] + ":" + ("0" + str(int(secs)))[-2:]
-                        img = cv2.imread(zpics[xx])
-                        if zpics[xx][40:45] != "99999":
-                            if anno == 1:
-                                cv2.putText(img,show_time,(apos,image.get_height() - 50),cv2.FONT_HERSHEY_COMPLEX_SMALL,2,(255,255,255))
-                            out.write(img)
-                            #os.remove(zpics[xx])
-                      if movtousb == 1 and os.path.exists('/media/' + h_user[0] + '/' + USB_Files[0] + "/Pictures/" + outvids[w] + "_99999.jpg"):
-                        os.remove('/media/' + h_user[0] + '/' + USB_Files[0] + "/Pictures/" + outvids[w] + "_99999.jpg")
-                  out.release()
-                  if os.path.exists(new_dir + "/" + str(outvids[0]) + ".mp4"):
-                         if os.path.getsize(new_dir + "/" + str(outvids[0]) + ".mp4") < 1000:
-                             os.remove(new_dir + "/" + str(outvids[0]) + ".mp4")
-                             fontObj = pygame.font.Font(None, 25)
-                             msgSurfaceObj = fontObj.render("Failed to make MP4 !!", False, (255,255,0))
-                             msgRectobj = msgSurfaceObj.get_rect()
-                             msgRectobj.topleft = (50,200)
-                             windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
-                             pygame.display.update()
-                             time.sleep(10)
-                  #if os.path.exists('/home/pi/Videos/' + outvids[w] + "_99999.jpg"):
-                  #      os.remove('/home/pi/Videos/' + outvids[w] + "_99999.jpg")
-                  #if os.path.exists('/run/shm/' + outvids[w] + "_99999.jpg"):
-                  #      os.remove('/run/shm/Videos/' + outvids[w] + "_99999.jpg")
-                  Videos = glob.glob('/home/' + h_user[0] + '/Pictures/*.jpg')
-                  USB_Files  = (os.listdir("/media/" + h_user[0]))
-                  if len(USB_Files) > 0:
-                      upics = glob.glob('/media/' + h_user[0] + "/" + USB_Files[0] + "/Pictures/*.jpg")
-                      upics.sort()
-                      for x in range(0,len(upics)):
-                          Videos.append(upics[x])
-                  Videos.sort()
-                  outvids = []
-                  z = ""
-                  for x in range(0,len(Videos)):
-                      Tideos = Videos[x].split("/")
-                      if Tideos[len(Tideos) - 1][:-10] != z:
-                          z = Tideos[len(Tideos) - 1][:-10]
-                          outvids.append(z)
-                  w = 0
-                  text(0,7,2,0,1,"MAKE FULL",14,7)
-                  text(0,7,2,1,1,"MP4",14,7)
-                  text(0,1,3,1,1,str(q+1) + " / " + str(ram_frames + frames),14,7)
-                  Capture = old_cap
-                  main_menu()
-                  if square == 1:
-                      pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(xheight,0,int(xheight/2.3),xheight))
-                  pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(0,cheight,cwidth,scr_height))
-                  show = 0
-                  restart = 1
-                  USB_Files  = (os.listdir("/media/" + h_user[0]))
-                  Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
-                  pygame.display.update()
                   if use_gpio == 1:
                       pwm.ChangeDutyCycle(dc)
 
@@ -3342,8 +3193,8 @@ while True:
                         text(0,5,2,1,1,"MP4",14,7)
                         text(0,6,2,0,1,"MAKE ALL",14,7)
                         text(0,6,2,1,1,"MP4s",14,7)
-                        text(0,7,2,0,1,"MAKE FULL",14,7)
-                        text(0,7,2,1,1,"MP4",14,7)
+                        #text(0,7,2,0,1,"MAKE FULL",14,7)
+                        #text(0,7,2,1,1,"MP4",14,7)
                         USB_Files  = []
                         USB_Files  = (os.listdir("/media/" + h_user[0]))
                         Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
