@@ -13,7 +13,7 @@ import glob
 import RPi.GPIO as GPIO
 from gpiozero import CPUTemperature
 
-# v1.056
+# v1.057
 
 # set screen size
 scr_width  = 800
@@ -396,7 +396,7 @@ if len(USB_Files) > 0:
    
 old_cap = Capture
 
-# read list of todays existing Video Files
+# read list of existing Video Files
 outvids = []
 z = ""
 y = ""
@@ -433,7 +433,6 @@ Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
 restart    = 0
 menu       = -1
 zoom       = 0
-ram_frames = 0
 
 st = os.statvfs("/run/shm/")
 sfreeram = (st.f_bavail * st.f_frsize)/1100000
@@ -598,6 +597,11 @@ def main_menu():
         text(0,1,6,1,1,ss,12,3)
     else:
          text(0,1,6,1,1,ss,12,0)
+
+# clear ram
+zpics = glob.glob('/run/shm/*.jpg')
+for tt in range(0,len(zpics)):
+    os.remove(zpics[tt])
     
 main_menu()
 oldimg = []
@@ -605,11 +609,6 @@ show = 0
 vidjr = 0
 Videos = []
 last = time.monotonic()
-
-# clear ram
-zpics = glob.glob('/run/shm/*.jpg')
-for tt in range(0,len(zpics)):
-    os.remove(zpics[tt])
 
 # check sd card space
 free = (os.statvfs('/'))
@@ -2607,10 +2606,11 @@ while True:
                     elif mp4vids[q] == "shm":
                         cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /run/shm/' + str(outvids[q]) + '_%5d.jpg '
                     if anno == 1:
-                        cmd += '-vf drawtext="fontsize=15:fontfile=/Library/Fonts/DroidSansMono.ttf:\ '
+                        cmd += '-vf drawtext="fontsize=15:fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf:\ '
+                        #cmd += '-vf drawtext="fontsize=15:fontfile=/Library/Fonts/DroidSansMono.ttf:\ '
                         cmd += "timecode='  " +str(hour) +"\:" + str(mins) + "\:" + str(secs) + "\:00':rate=" + str(mp4_fps) + ":text=" + str(days)+"/"+str(mths)+"/"+str(year)+"--"
                         cmd += ":fontsize=50:fontcolor='white@0.7':\ "
-                        cmd += 'boxcolor=black@0.3:box=1:x=0:y=1030" '
+                        cmd += 'boxcolor=black@0.1:box=1:x=100:y=1000" '
                     cmd += str(logfile)
                     #print(cmd)
                     os.system(cmd)
@@ -2787,6 +2787,15 @@ while True:
                       text(0,8,0,0,1,"MOVE MP4s",14,7)
                       text(0,8,0,1,1,"to USB",14,7)
                   pygame.display.update()
+                  Capture = old_cap
+                  main_menu()
+                  if square == 1:
+                      pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(xheight,0,int(xheight/2.3),xheight))
+                  pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(0,cheight,cwidth,scr_height))
+                  show = 0
+                  restart = 1
+                  USB_Files  = (os.listdir("/media/" + h_user[0]))
+                  Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
                   if use_gpio == 1:
                       pwm.ChangeDutyCycle(dc)
 
