@@ -49,3 +49,5 @@ MAKE MP4  - Set MP4 FPS, VIDEO (Shows triggered frame), PLAY VIDEO , FRAME (adva
 SD HOUR - will shutdown at this time. set to 0 to disable.
 
 EXIT - EXIT to exit script. ALWAYS USE THIS TO EXIT, OR You will need to reboot your pi.
+
+You can mask areas within the defined area of detection. Right click within the area, masked areas will show as dark, click again to clear.
