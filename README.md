@@ -5,7 +5,7 @@ It will capture videos as still frames, upto 30fps at 1920 x 1080, which can be 
 
 lt has some editing facilities, delete individual frames, delete a series of frames or delete all frames from start or to end of video.
 
-Can make individual mp4s, or all mp4s including a FULL MP4 of frames stored.
+Can make individual mp4s, all mp4s  or a FULL MP4 of frames stored.
 
 
 Pi4 recommended, with RaspiOS 64bit.
