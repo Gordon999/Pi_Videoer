@@ -38,7 +38,7 @@ CAMERA SETTINGS 1 -  Camera Controls
 
 CAMERA SETTINGS 2 - Video Format, Video Length,Video pre-frames, more Camera Controls, Interval (delay before being re-triggered)
 
-CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera),Zoom (to help focusing), Square Format video, SF Position
+CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera),Zoom (to help focusing), Square Format video, SF Position. MASK ALPHA sets mask displayed level. CLEAR MASK sets mask to full ON or OFF (right click).
 
 OTHER SETTINGS    - Auto Limit (number of videos captured to ram before movinb them to SD card), RAM limit (MB),SD Card Limit (%), SD FULL Action, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB
 
