@@ -28,7 +28,7 @@ Download PiVideoer.py and copy to /home/pi (assuming your username is pi)
 
 MAIN MENU
 
-CAPTURE - switch capturing ON / OFF
+CAPTURE - switch capturing ON / OFF. Shows number of videos in RAM - on SD card
 
 RECORD  - click to capture a video
 
