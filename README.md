@@ -3,6 +3,8 @@
 A python script to capture images triggered by motion . Uses Raspberry OS BULLSEYE and libcamera-vid.
 It will capture videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files.
 
+lt also captures frames before the trigger frame, default is 2 seconds but settable.
+
 lt has some editing facilities, delete individual frames, delete a series of frames or delete all frames from start or to end of video.
 
 Can make individual mp4s, all mp4s  or a FULL MP4 of frames stored.
