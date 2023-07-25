@@ -9,6 +9,9 @@ lt has some editing facilities, delete individual frames, delete a series of fra
 
 Can make individual mp4s, all mp4s  or a FULL MP4 of frames stored.
 
+Can control focus on a pi v3camera, auto, continuous,  manual or spot.
+
+Frames are captured to /home/user/Pictures, mp4s in /home/user/Videos.
 
 Pi4 recommended, with RaspiOS 64bit. You may need a cooling fan.
 
