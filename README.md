@@ -35,7 +35,7 @@ MAIN MENU
 
 CAPTURE - switch capturing ON / OFF. Shows number of videos in RAM - on SD card
 
-RECORD  - click to capture a video
+RECORD  - click to capture a video. Shows RAM space left - % of SD card used.
 
 DETECTION SETTINGS - PREVIEW THRESHOLD (Shows detected pixels),Set Thresholds (change in pixel levels), Detection levels (% of changed pixels), Area of detection, Detection Speed (1-100), Colour Filter (R/G/B/FULL), Noise Reduction (OFF/LOW/HIGH).
 
@@ -45,7 +45,7 @@ CAMERA SETTINGS 2 - Video Format, Video Length,Video pre-frames, more Camera Con
 
 CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera),Zoom (to help focusing), Square Format video, SF Position. MASK ALPHA sets mask displayed level. CLEAR MASK sets mask to full ON or OFF (right click).
 
-OTHER SETTINGS    - Auto Limit (number of videos captured to ram before movinb them to SD card), RAM limit (MB),SD Card Limit (%), SD FULL Action, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB
+OTHER SETTINGS    - Auto Limit (number of videos captured to ram before movinb them to SD card), RAM limit (MB),SD Card Limit (%), SD FULL Action, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB (shows % of USB used)
 
 SHOW, EDIT & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO (×4 backwards, backwards,forwards, 4x forwards) , FRAME (advance by single frames), DELETE FRAME, DEL from START /to END , DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames), MAKE MP4 menu
 
