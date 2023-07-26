@@ -45,7 +45,7 @@ CAMERA SETTINGS 2 - Video Format, Video Length,Video pre-frames, more Camera Con
 
 CAMERA SETTINGS 3 -  Focus (Manual / Auto for v3 camera),Zoom (to help focusing), Square Format video, SF Position. MASK ALPHA sets mask displayed level. CLEAR MASK sets mask to full ON or OFF (right click).
 
-OTHER SETTINGS    - Auto Limit (number of videos captured to ram before movinb them to SD card), RAM limit (MB),SD Card Limit (%), SD FULL Action, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB (shows % of USB used)
+OTHER SETTINGS    - Auto Time (will copy videos to SD card after this time with no activity), RAM limit (MB),SD Card Limit (%), SD FULL Action, FAN TEMPS (if GPIO enabled), EXT TRIGGER to trigger an external camera (if GPIO enabled), Copy JPGs to USB (shows % of USB used)
 
 SHOW, EDIT & DELETE     - VIDEO (Shows triggered frame), PLAY VIDEO (×4 backwards, backwards,forwards, 4x forwards) , FRAME (advance by single frames), DELETE FRAME, DEL from START /to END , DELETE VIDEO, DELETE ALL VIDS (RIGHT mouse click), SHOW ALL VIDEOS (sequences through all triggered frames), MAKE MP4 menu
 
