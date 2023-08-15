@@ -13,24 +13,26 @@ import glob
 import RPi.GPIO as GPIO
 from gpiozero import CPUTemperature
 
-# v1.071
+# v1.075
 
 # set screen size
 scr_width  = 800
 scr_height = 480
 
-# use GPIO for optional FAN and external camera trigger - DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
+# use GPIO for optional FAN and external camera triggers
+# DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
 use_gpio = 1
 
-# ext_camera trigger gpios (if use_gpio = 1)
+# ext camera trigger gpios (if use_gpio = 1)
 s_focus  = 16
 s_trig   = 12
 
-# ext trigger input
+# ext trigger input gpios (if use_gpio = 1)
 e_trig1   = 21
 e_trig2   = 20
 
-# fan ctrl (if use_gpio = 1) - DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
+# fan ctrl gpio (if use_gpio = 1)
+# DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
 fan      = 14 
 
 # save MP4 to SD / USB, 0 = SD Card, 1 = USB 
@@ -66,8 +68,8 @@ if use_gpio == 1:
     pwm.start(0)
 
 # set default config parameters
-v_crop        = 100     # size of vert detection window *
-h_crop        = 100     # size of hor detection window *
+v_crop        = 80      # size of vert detection window *
+h_crop        = 80      # size of hor detection window *
 threshold     = 20      # minm change in pixel luminance *
 threshold2    = 255     # maxm change in pixel luminance *
 detection     = 10      # % of pixels detected to trigger in % *
@@ -75,20 +77,20 @@ det_high      = 100     # max % of pixels detected to trigger in %  *
 fps           = 25      # set camera fps *
 mp4_fps       = 25      # set MP4 fps *
 mode          = 1       # set camera mode ['off','normal','sport'] *
-speed         = 80000   # mS x 1000 *
+speed         = 80000   # set manual shutter speed in mS x 1000 *
 gain          = 0       # set gain , 0 = AUTO *
 brightness    = 0       # set camera brightness *
 contrast      = 70      # set camera contrast *
 Capture       = 1       # 0 = off, 1 = ON *
 preview       = 0       # show detected changed pixels *
-noframe       = 0       # set to 1 for no window frame
+noframe       = 1       # set to 1 for no window frame
 awb           = 1       # auto white balance, 1 = ON, 0 = OFF *
 red           = 3.5     # red balance *
 blue          = 1.5     # blue balance *
 meter         = 0       # metering *
 ev            = -1      # eV *
 interval      = 0       # wait between capturing Pictures *
-v_length      = 20000   # video length in mS *
+v_length      = 30000   # video length in mS *
 ES            = 1       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
 denoise       = 0       # denoise level *
 quality       = 75      # video quality *
@@ -98,7 +100,7 @@ SD_limit      = 90      # max SD card filled in % before copy to USB if availabl
 auto_save     = 1       # set to 1 to automatically copy to SD card
 auto_time     = 10      # time after which auto save actioned, 0 = OFF
 ram_limit     = 150     # MBytes, copy from RAM to SD card when reached *
-fan_time      = 10      # sampling time in seconds *
+fan_time      = 10      # fan sampling time in seconds *
 fan_low       = 65      # fan OFF below this, 25% to 100% pwm above this *
 fan_high      = 78      # fan 100% pwm above this *
 sd_hour       = 22      # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
@@ -118,7 +120,7 @@ alp           = 255     # alpha, used for stop animations, shows current and las
 m_alpha       = 130     # MASK ALPHA *
 # * adjustable whilst running
 
-# initialise
+# initialise parameters
 synced        = 0
 show          = 0
 reboot        = 0
@@ -129,8 +131,7 @@ zoom          = 0
 trace         = 0
 timer10       = 0
 col_filterp   = 0
-config_file   = "PiVideoconfig50.txt"
-ram_snaps     = 0
+config_file   = "PiVideoconfig74.txt"
 a             = int(scr_width/3)
 b             = int(scr_height/2)
 fcount        = 0
@@ -154,7 +155,7 @@ if not os.path.exists(config_file):
     defaults = [h_crop,threshold,fps,mode,speed,gain,brightness,contrast,SD_limit,preview,awb,detection,int(red*10),int(blue*10),
               interval,v_crop,v_length,ev,meter,ES,a,b,sharpness,saturation,denoise,fan_low,fan_high,det_high,quality,
               fan_time,sd_hour,vformat,threshold2,col_filter,nr,pre_frames,auto_time,ram_limit,v3_f_mode,v3_focus,square,int(sqpos*100),
-              mp4_fps,anno,SD_F_Act]
+              mp4_fps,anno,SD_F_Act,dspeed]
     with open(config_file, 'w') as f:
         for item in defaults:
             f.write("%s\n" % item)
@@ -213,6 +214,7 @@ sqpos       = config[41]/100
 mp4_fps     = config[42]
 anno        = config[43]
 SD_F_Act    = config[44]
+dspeed      = config[45]
 
 cap_width  = vwidths[vformat]
 cap_height = vheights[vformat]
@@ -1487,10 +1489,12 @@ while True:
                     if zoom == 1:
                         button(0,9,1)
                         text(0,9,1,0,1,"Zoom",14,0)
+                        preview = 1
                     else:
                         zoom = 0
                         button(0,9,0)
                         text(0,9,2,0,1,"Zoom",14,7)
+                        preview = 0
 
                 elif g == 3 and menu == 7:
                     # ZOOM
@@ -1498,10 +1502,12 @@ while True:
                     if zoom == 1:
                         button(0,3,1)
                         text(0,3,1,0,1,"Zoom",14,0)
+                        preview = 1
                     else:
                         zoom = 0
                         button(0,3,0)
                         text(0,3,2,0,1,"Zoom",14,7)
+                        preview = 0
                     
                 elif g == 1 and menu == 1:
                     # MODE
@@ -2073,6 +2079,12 @@ while True:
                     play.sort()
                     if fr == 0:
                         frame = 0
+                        for x in range(0,len(play)):
+                            fxa = "00000" + str(x)
+                            fxb = play[x].split("_")
+                            if fxb[1] != "99999.jpg":
+                                os.rename(play[x],fxb[0] + "_" + str(fxa[-5:]) + '.jpg')
+                        play.sort()
                     else:
                         frame = len(play)-2
                     image = pygame.image.load(play[int(frame)])
@@ -2112,6 +2124,13 @@ while True:
                     text(0,3,3,1,1," ",14,7)
                     text(0,4,3,1,1,"FRAME ",14,7)
                     text(0,3,2,0,1,"Frame ",14,7)
+                    play = glob.glob(zzpics[q][:-10] + "*.jpg")
+                    play.sort()
+                    for x in range(0,len(play)):
+                        fxa = "00000" + str(x)
+                        fxb = play[x].split("_")
+                        if fxb[1] != "99999.jpg":
+                            os.rename(play[x],fxb[0] + "_" + str(fxa[-5:]) + '.jpg')
                     play = glob.glob(zzpics[q][:-10] + "*.jpg")
                     play.sort()
                     if len(play) > 1:
@@ -2550,6 +2569,7 @@ while True:
                         apos = 100
                     else:
                         apos = int(cap_width/3)
+                    mask,change = MaskChange()
                     restart = 1
                     save_config = 1
 
@@ -3369,6 +3389,7 @@ while True:
                 config[42] = mp4_fps
                 config[43] = anno
                 config[44] = SD_F_Act
+                config[45] = dspeed
 
                 with open(config_file, 'w') as f:
                     for item in config:
