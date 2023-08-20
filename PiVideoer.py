@@ -13,7 +13,7 @@ import glob
 import RPi.GPIO as GPIO
 from gpiozero import CPUTemperature
 
-# v1.075
+# v1.077
 
 # set screen size
 scr_width  = 800
@@ -21,7 +21,7 @@ scr_height = 480
 
 # use GPIO for optional FAN and external camera triggers
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
-use_gpio = 1
+use_gpio = 0
 
 # ext camera trigger gpios (if use_gpio = 1)
 s_focus  = 16
@@ -72,8 +72,8 @@ v_crop        = 80      # size of vert detection window *
 h_crop        = 80      # size of hor detection window *
 threshold     = 20      # minm change in pixel luminance *
 threshold2    = 255     # maxm change in pixel luminance *
-detection     = 10      # % of pixels detected to trigger in % *
-det_high      = 100     # max % of pixels detected to trigger in %  *
+detection     = 10      # % of pixels detected to trigger, in % *
+det_high      = 100     # max % of pixels detected to trigger, in %  *
 fps           = 25      # set camera fps *
 mp4_fps       = 25      # set MP4 fps *
 mode          = 1       # set camera mode ['off','normal','sport'] *
@@ -83,12 +83,12 @@ brightness    = 0       # set camera brightness *
 contrast      = 70      # set camera contrast *
 Capture       = 1       # 0 = off, 1 = ON *
 preview       = 0       # show detected changed pixels *
-noframe       = 1       # set to 1 for no window frame
+noframe       = 0       # set to 1 for no window frame
 awb           = 1       # auto white balance, 1 = ON, 0 = OFF *
 red           = 3.5     # red balance *
 blue          = 1.5     # blue balance *
 meter         = 0       # metering *
-ev            = -1      # eV *
+ev            = 0       # eV *
 interval      = 0       # wait between capturing Pictures *
 v_length      = 30000   # video length in mS *
 ES            = 1       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
@@ -112,7 +112,7 @@ scientific    = 0       # scientific for HQ camera *
 v3_f_mode     = 0       # v3 camera focus mode *
 v3_focus      = 0       # v3 camera manual focus default *
 dspeed        = 10      # detection speed 1-100, 1 = slowest *
-square        = 1       # 0 = normal format , 1 = square format *
+square        = 0       # 0 = normal format , 1 = square format *
 sqpos         = .15     # square format position *
 anno          = 1       # annotate MP4s with date and time , 1 = yes, 0 = no *
 SD_F_Act      = 0       # Action on SD FULL, 0 = STOP, 1 = DELETE OLDEST VIDEO *
@@ -342,7 +342,6 @@ def Camera_start(wx,hx,zoom):
     st = os.statvfs("/run/shm/")
     freeram = (st.f_bavail * st.f_frsize)/1100000
     ss = str(int(sfreeram)) + "MB - " + str(int(SD_storage)) + "%"
-    #text(0,10,3,1,1,ss,15,7)
     rpistr = "libcamera-vid -t 0 --segment 1 --codec mjpeg -q " + str(quality)
     rpistr += " -n -o /run/shm/test%06d.jpg --contrast " + str(contrast/100) + " --brightness " + str(brightness/100)
     if square == 1:
@@ -2628,13 +2627,16 @@ while True:
                     y = ""
                     outvids = []
                     mp4vids = []
+                    mp42vids = []
                     for x in range(0,len(Sideos)):
                         Tideos = Sideos[x].split("/")
                         if Tideos[len(Tideos) - 1][:-10] != z:
                             z = Tideos[len(Tideos) - 1][:-10]
                             y = Tideos[len(Tideos) - 2]
+                            v = Tideos[1]
                             outvids.append(z)
                             mp4vids.append(y)
+                            mp42vids.append(v)
                     year = 2000 + int(outvids[q][0:2])
                     mths = int(outvids[q][2:4])
                     days = int(outvids[q][4:6])
@@ -2656,10 +2658,12 @@ while True:
                                 f.write("%s\n" % item)
                     if os.path.exists(logfile):
                         os.remove(logfile)
-                    if mp4vids[q] == "Pictures":
+                    if mp4vids[q] == "Pictures" and mp42vids[q] == "home":
                         cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /home/' + h_user[0] + '/Pictures/' + str(outvids[q]) + '_%5d.jpg '
-                    elif mp4vids[q] == "shm":
+                    elif mp4vids[q] == "shm" and mp42vids[q] == "run":
                         cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /run/shm/' + str(outvids[q]) + '_%5d.jpg '
+                    elif mp4vids[q] == "Pictures" and mp42vids[q] == "media":
+                        cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /media/' + h_user[0] + "/" + USB_Files[0] +  '/Pictures/' + str(outvids[q]) + '_%5d.jpg '
                     if anno == 1:
                         cmd += '-vf drawtext="fontsize=15:fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf:\ '
                         cmd += "timecode='  " +str(hour) +"\:" + str(mins) + "\:" + str(secs) + "\:00':rate=" + str(mp4_fps) + ":text=" + str(days)+"/"+str(mths)+"/"+str(year)+"--"
@@ -2695,6 +2699,10 @@ while True:
                             image = pygame.image.load('/run/shm/' + outvids[q] + "_99999.jpg")
                         elif os.path.exists('/run/shm/' + outvids[q] + "_00001.jpg"):
                             image = pygame.image.load('/run/shm/' + outvids[q] + "_00001.jpg")
+                        elif os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[q] + "_99999.jpg"):
+                            image = pygame.image.load('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[q] + "_99999.jpg")
+                        elif os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[q] + "_00001.jpg"):
+                            image = pygame.image.load('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[q] + "_00001.jpg")
                         image = pygame.transform.scale(image, (xwidth,xheight))
                         windowSurfaceObj.blit(image, (0, 0))
                         fontObj = pygame.font.Font(None, 25)
@@ -2772,6 +2780,7 @@ while True:
                       new_dir = '/home/' + h_user[0] + "/Videos/"
                   outvids = []
                   mp4vids = []
+                  mp42vids = []
                   txtvids = []
                   text(0,5,2,0,1,"MAKE A",14,7)
                   text(0,5,2,1,1,"MP4",14,7)
@@ -2783,8 +2792,10 @@ while True:
                           z = Tideos[len(Tideos) - 1][:-10]
                           txt = "file '" + new_dir + z + ".mp4'"
                           y = Tideos[len(Tideos) - 2]
+                          v = Tideos[1]
                           outvids.append(z)
                           mp4vids.append(y)
+                          mp42vids.append(v)
                           txtvids.append(txt)
                   with open('mylist.txt', 'w') as f:
                       for item in txtvids:
@@ -2798,6 +2809,10 @@ while True:
                         image = pygame.image.load('/run/shm/' + outvids[w] + "_99999.jpg")
                     elif os.path.exists('/run/shm/' + outvids[w] + "_00001.jpg"):
                         image = pygame.image.load('/run/shm/' + outvids[w] + "_00001.jpg")
+                    elif os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[w] + "_99999.jpg"):
+                        image = pygame.image.load('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[w] + "_99999.jpg")
+                    elif os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[w] + "_00001.jpg"):
+                        image = pygame.image.load('/media/' + h_user[0] + "/" + USB_Files[0] + '/Pictures/' + outvids[w] + "_00001.jpg")
                     imageo = pygame.transform.scale(image, (xwidth,xheight))
                     windowSurfaceObj.blit(imageo, (0, 0))
                     fontObj = pygame.font.Font(None, 25)
@@ -2822,10 +2837,13 @@ while True:
                     logfile = new_dir + "/" + str(outvids[w]) + ".mp4"
                     if os.path.exists(logfile):
                         os.remove(logfile)
-                    if mp4vids[w] == "Pictures":
+                    if mp4vids[w] == "Pictures" and mp42vids[w] == "home":
                         cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /home/' + h_user[0] + '/Pictures/' + str(outvids[w]) + '_%5d.jpg '
-                    elif mp4vids[w] == "shm":
+                    elif mp4vids[w] == "shm" and mp42vids[w] == "run":
                         cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /run/shm/' + str(outvids[w]) + '_%5d.jpg '
+                    elif mp4vids[w] == "Pictures" and mp42vids[w] == "media":
+                        cmd = 'ffmpeg -framerate ' + str(mp4_fps) + ' -f image2 -i /media/' + h_user[0] + "/" + USB_Files[0] +  '/Pictures/' + str(outvids[w]) + '_%5d.jpg '
+
                     if anno == 1:
                         cmd += '-vf drawtext="fontsize=15:fontfile=/Library/Fonts/DroidSansMono.ttf:\ '
                         cmd += "timecode='  " + str(hour) +"\:" + str(mins) + "\:" + str(secs) + "\:00':rate=" + str(mp4_fps) + ":text=" + str(days)+"/"+str(mths)+"/"+str(year)+"--"
