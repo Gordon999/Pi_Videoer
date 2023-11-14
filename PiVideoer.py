@@ -892,8 +892,9 @@ while True:
             pygame.draw.rect(windowSurfaceObj, (0,0,0), Rect(0,0,xwidth,xheight))
 
             # external input triggers to RECORD
-            if (GPIO.input(e_trig1) == 1 or GPIO.input(e_trig2) == 1):
-                record = 1
+            if use_gpio == 1:
+                if (GPIO.input(e_trig1) == 1 or GPIO.input(e_trig2) == 1):
+                    record = 1
                 
             # detection of motion
             if (((sar5/diff) * 100 > detection and (sar5/diff) * 100 < det_high) or (time.monotonic() - timer10 > interval and timer10 != 0 and threshold == 0) or record == 1) and menu == -1:
