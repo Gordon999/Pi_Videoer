@@ -103,7 +103,7 @@ ram_limit     = 150     # MBytes, copy from RAM to SD card when reached *
 fan_time      = 10      # fan sampling time in seconds *
 fan_low       = 65      # fan OFF below this, 25% to 100% pwm above this *
 fan_high      = 78      # fan 100% pwm above this *
-sd_hour       = 22      # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
+sd_hour       = 0       # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
 vformat       = 2       # SEE VWIDTHS/VHEIGHTS *
 col_filter    = 3       # 3 = FULL, SEE COL_FILTERS *
 nr            = 2       # Noise reduction *
