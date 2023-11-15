@@ -27,6 +27,8 @@ To install:
 
 Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit and 64bit versions)
 
+WON'T WORK WITH BOOKWORM !!
+
 sudo apt install python3-opencv
 
 Download PiVideoer.py and copy to /home/《user》
