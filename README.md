@@ -1,6 +1,6 @@
 # Pi_Videoer
 
-A python script to capture images triggered by motion , external trigger or manually. Uses Raspberry OS BULLSEYE and libcamera-vid.
+A python script to capture images triggered by motion , external trigger or manually. Uses Raspberry OS BULLSEYE (NOT BOOKWORM!) and libcamera-vid.
 It will capture videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files.
 
 lt also captures frames before the trigger frame, default is 2 seconds but user settable.
