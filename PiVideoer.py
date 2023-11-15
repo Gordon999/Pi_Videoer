@@ -91,7 +91,7 @@ meter         = 0       # metering *
 ev            = 0       # eV *
 interval      = 0       # wait between capturing Pictures *
 v_length      = 30000   # video length in mS *
-ES            = 1       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
+ES            = 0       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
 denoise       = 0       # denoise level *
 quality       = 75      # video quality *
 sharpness     = 14      # sharpness *
@@ -106,7 +106,7 @@ fan_high      = 78      # fan 100% pwm above this *
 sd_hour       = 22      # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
 vformat       = 2       # SEE VWIDTHS/VHEIGHTS *
 col_filter    = 3       # 3 = FULL, SEE COL_FILTERS *
-nr            = 0       # Noise reduction *
+nr            = 2       # Noise reduction *
 pre_frames    = fps * 2 # 2 x fps = 2 seconds *
 scientific    = 0       # scientific for HQ camera * 
 v3_f_mode     = 0       # v3 camera focus mode *
