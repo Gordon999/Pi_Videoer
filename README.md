@@ -27,7 +27,7 @@ To install:
 
 Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit and 64bit versions)
 
-if using BOOKWORM switch to X11. sudo radpi-config, choose advanced , choose wayland to X11 option, reboot.
+if using BOOKWORM switch to X11. sudo raspi-config, choose advanced , choose 6A X11 option, reboot.
 
 sudo apt install python3-opencv
 
