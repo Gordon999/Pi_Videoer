@@ -90,7 +90,7 @@ blue          = 1.5     # blue balance *
 meter         = 0       # metering *
 ev            = 0       # eV *
 interval      = 0       # wait between capturing Pictures *
-v_length      = 30000   # video length in mS *
+v_length      = 10000   # video length in mS *
 ES            = 0       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
 denoise       = 0       # denoise level *
 quality       = 75      # video quality *
