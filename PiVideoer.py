@@ -13,7 +13,7 @@ import glob
 import RPi.GPIO as GPIO
 from gpiozero import CPUTemperature
 
-# v1.077
+# v1.087
 
 # set screen size
 scr_width  = 800
@@ -21,7 +21,7 @@ scr_height = 480
 
 # use GPIO for optional FAN and external camera triggers
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
-use_gpio = 0
+use_gpio = 1
 
 # ext camera trigger gpios (if use_gpio = 1)
 s_focus  = 16
@@ -30,6 +30,8 @@ s_trig   = 12
 # ext trigger input gpios (if use_gpio = 1)
 e_trig1   = 21
 e_trig2   = 20
+ext_trig1 = 1 # 0 or 1
+ext_trig2 = 1 # 0 or 1
 
 # fan ctrl gpio (if use_gpio = 1)
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
@@ -47,8 +49,7 @@ with open("/boot/config.txt", "r") as file:
         line = file.readline()
         
 # disable gpio if using hyperpixel4 display (all gpios in use)
-if "dtoverlay=vc4-kms-dpi-hyperpixel4,disable-touch" in configtxt:
-    use_gpio = 1
+if "dtoverlay=vc4-kms-dpi-hyperpixel4,disable-touch" in configtxt and use_gpio == 1:
     fan     = 27
     s_focus = 10
     s_trig  = 11
@@ -59,8 +60,14 @@ if use_gpio == 1:
     GPIO.setwarnings(False)
     GPIO.setup(s_trig,GPIO.OUT)
     GPIO.setup(s_focus,GPIO.OUT)
-    GPIO.setup(e_trig1, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.setup(e_trig2, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    if ext_trig1 == 1:
+        GPIO.setup(e_trig1, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    else:
+        GPIO.setup(e_trig1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    if ext_trig2 == 1:
+        GPIO.setup(e_trig2, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    else:
+        GPIO.setup(e_trig2, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.output(s_trig, GPIO.LOW)
     GPIO.output(s_focus, GPIO.LOW)
     GPIO.setup(fan, GPIO.OUT)
@@ -83,15 +90,15 @@ brightness    = 0       # set camera brightness *
 contrast      = 70      # set camera contrast *
 Capture       = 1       # 0 = off, 1 = ON *
 preview       = 0       # show detected changed pixels *
-noframe       = 0       # set to 1 for no window frame
+noframe       = 1       # set to 1 for no window frame
 awb           = 1       # auto white balance, 1 = ON, 0 = OFF *
 red           = 3.5     # red balance *
 blue          = 1.5     # blue balance *
 meter         = 0       # metering *
-ev            = 0       # eV *
+ev            = -1      # eV *
 interval      = 0       # wait between capturing Pictures *
 v_length      = 10000   # video length in mS *
-ES            = 0       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
+ES            = 1       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
 denoise       = 0       # denoise level *
 quality       = 75      # video quality *
 sharpness     = 14      # sharpness *
@@ -103,7 +110,7 @@ ram_limit     = 150     # MBytes, copy from RAM to SD card when reached *
 fan_time      = 10      # fan sampling time in seconds *
 fan_low       = 65      # fan OFF below this, 25% to 100% pwm above this *
 fan_high      = 78      # fan 100% pwm above this *
-sd_hour       = 0       # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
+sd_hour       = 22      # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
 vformat       = 2       # SEE VWIDTHS/VHEIGHTS *
 col_filter    = 3       # 3 = FULL, SEE COL_FILTERS *
 nr            = 2       # Noise reduction *
@@ -112,7 +119,7 @@ scientific    = 0       # scientific for HQ camera *
 v3_f_mode     = 0       # v3 camera focus mode *
 v3_focus      = 0       # v3 camera manual focus default *
 dspeed        = 10      # detection speed 1-100, 1 = slowest *
-square        = 0       # 0 = normal format , 1 = square format *
+square        = 1       # 0 = normal format , 1 = square format *
 sqpos         = .15     # square format position *
 anno          = 1       # annotate MP4s with date and time , 1 = yes, 0 = no *
 SD_F_Act      = 0       # Action on SD FULL, 0 = STOP, 1 = DELETE OLDEST VIDEO *
@@ -316,7 +323,7 @@ if not os.path.exists('/home/' + h_user[0] + '/CMask.bmp'):
    pygame.display.quit()
 
 def MaskChange(): # used for masked window resizing
-   global v_crop2 ,h_crop2
+   global v_crop2,h_crop2
    mask = cv2.imread('/home/' + h_user[0] + '/CMask.bmp')
    mask = cv2.resize(mask, dsize=(v_crop2 * 2, h_crop2 * 2), interpolation=cv2.INTER_CUBIC)
    mask = cv2.cvtColor(mask,cv2.COLOR_RGB2GRAY)
@@ -575,8 +582,8 @@ def main_menu():
     text(0,4,1,1,1,"Settings 2",14,7)
     text(0,5,1,0,1,"CAMERA",14,7)
     text(0,5,1,1,1,"Settings 3",14,7)
-    text(0,8,1,0,1,"OTHER",14,7)
-    text(0,8,1,1,1,"Settings ",14,7)
+    text(0,7,1,0,1,"OTHER",14,7)
+    text(0,7,1,1,1,"Settings ",14,7)
     if ((ram_frames > 0 or frames > 0) and menu == -1):
         text(0,6,1,0,1,"SHOW,EDIT or",13,7)
         text(0,6,1,1,1,"DELETE",13,7)
@@ -584,11 +591,11 @@ def main_menu():
         text(0,6,0,0,1,"SHOW,EDIT or",13,7)
         text(0,6,0,1,1,"DELETE",13,7)
     if ram_frames > 0 or frames > 0:
-        text(0,7,1,0,1,"MAKE",14,7)
-        text(0,7,1,1,1,"MP4",14,7)
+        text(0,8,1,0,1,"MAKE",14,7)
+        text(0,8,1,1,1,"MP4",14,7)
     else:
-        text(0,7,0,0,1,"MAKE",14,7)
-        text(0,7,0,1,1,"MP4",14,7)
+        text(0,8,0,0,1,"MAKE",14,7)
+        text(0,8,0,1,1,"MP4",14,7)
     text(0,9,1,0,1,"Shutdown Hour",14,7)
     if synced == 1:
         text(0,9,3,1,1,str(sd_hour) + ":00",14,7)
@@ -626,6 +633,9 @@ ss = str(int(sfreeram)) + "MB - " + str(int(SD_storage)) + "%"
 
 # start Pi Camera subprocess
 Camera_start(cap_width,cap_height,zoom)
+
+cpu_temp = str(CPUTemperature()).split("=")
+temp = float(str(cpu_temp[1])[:-1])
 
 while True:
     time.sleep(1/dspeed)
@@ -789,9 +799,10 @@ while True:
             ar5[ar5 >= threshold2] = 0
             ar5[ar5 >= threshold] = 1
             # APPLY MASK
-            ar5 = ar5 * mask
+            if mask.shape == ar5.shape:
+               ar5 = ar5 * mask
             # NOISE REDUCTION
-            if nr > 0:
+               if nr > 0:
                 pr = np.diff(np.diff(ar5))
                 pr[pr < -2 ] = 0
                 if nr > 1:
@@ -827,6 +838,8 @@ while True:
             
             if menu == 0:
                 text(0,1,2,0,1,"Low Detect " + str(int((sar5/diff) * 100)) + "%",14,7)
+            if menu == -1 and preview == 1:
+                text(0,2,2,1,1,str(int((sar5/diff) * 100)) + "%",14,7)
             # MAKE PREVIEW OF DETECTED PIXELS
             if preview == 1:
                 imagep = pygame.surfarray.make_surface(ar5 * 201)
@@ -892,9 +905,8 @@ while True:
             pygame.draw.rect(windowSurfaceObj, (0,0,0), Rect(0,0,xwidth,xheight))
 
             # external input triggers to RECORD
-            if use_gpio == 1:
-                if (GPIO.input(e_trig1) == 1 or GPIO.input(e_trig2) == 1):
-                    record = 1
+            if (GPIO.input(e_trig1) == ext_trig1 or GPIO.input(e_trig2) == ext_trig2):
+                record = 1
                 
             # detection of motion
             if (((sar5/diff) * 100 > detection and (sar5/diff) * 100 < det_high) or (time.monotonic() - timer10 > interval and timer10 != 0 and threshold == 0) or record == 1) and menu == -1:
@@ -1059,11 +1071,11 @@ while True:
                         text(0,6,0,0,1,"SHOW,EDIT or",13,7)
                         text(0,6,0,1,1,"DELETE",14,7)
                     if (ram_frames > 0 or frames > 0) and menu == -1:
-                        text(0,7,1,0,1,"MAKE",14,7)
-                        text(0,7,1,1,1,"MP4",14,7)
+                        text(0,8,1,0,1,"MAKE",14,7)
+                        text(0,8,1,1,1,"MP4",14,7)
                     elif menu == -1:
-                        text(0,7,0,0,1,"MAKE",14,7)
-                        text(0,7,0,1,1,"MP4",14,7)
+                        text(0,8,0,0,1,"MAKE",14,7)
+                        text(0,8,0,1,1,"MP4",14,7)
                     USB_Files  = []
                     USB_Files  = (os.listdir("/media/" + h_user[0]))
                     if len(USB_Files) > 0:
@@ -1175,13 +1187,13 @@ while True:
             if zoom == 0:
                 imagep = pygame.transform.scale(imagep, (h_crop*2,v_crop*2))
                 windowSurfaceObj.blit(imagep, (a-h_crop,b-v_crop))
-            else:
+            elif preview == 1:
                 imagep = pygame.transform.scale(imagep, (xwidth,xheight))
                 windowSurfaceObj.blit(imagep, (0,0))
-            if square == 0:
-                pygame.draw.rect(windowSurfaceObj, (255,255,0), Rect(int(cwidth/2) - int(xheight/2) ,0 ,int(xheight),int(xheight)), 1)
-                pygame.draw.line(windowSurfaceObj, (255,255,0), (int(cwidth/2) - 50,int(xheight/2)),(int(cwidth/2) + 50, int(xheight/2)))
-                pygame.draw.line(windowSurfaceObj, (255,255,0), (int(cwidth/2),int(xheight/2)-50),(int(cwidth/2), int(xheight/2)+50))
+            #if square == 0:
+            #    pygame.draw.rect(windowSurfaceObj, (255,255,0), Rect(int(cwidth/2) - int(xheight/2) ,0 ,int(xheight),int(xheight)), 1)
+            #    pygame.draw.line(windowSurfaceObj, (255,255,0), (int(cwidth/2) - 50,int(xheight/2)),(int(cwidth/2) + 50, int(xheight/2)))
+            #    pygame.draw.line(windowSurfaceObj, (255,255,0), (int(cwidth/2),int(xheight/2)-50),(int(cwidth/2), int(xheight/2)+50))
           if zoom == 0:
               pygame.draw.rect(windowSurfaceObj, (0,255,0), Rect(a - h_crop,b - v_crop ,h_crop*2,v_crop*2), 2)
               nmask = pygame.surfarray.make_surface(mask)
@@ -1300,7 +1312,7 @@ while True:
                     old_cap = Capture
                     save_config = 1
 
-                elif (g == 10 and menu == -1) or g == 11:
+                elif ((g == 10 and menu == -1) or g == 11) and event.button == 3:
                     # EXIT
                     if trace == 1:
                          print ("Step 13 EXIT")
@@ -1489,7 +1501,8 @@ while True:
                     if zoom == 1:
                         button(0,9,1)
                         text(0,9,1,0,1,"Zoom",14,0)
-                        preview = 1
+                        if event.button == 3:
+                            preview = 1
                     else:
                         zoom = 0
                         button(0,9,0)
@@ -1502,7 +1515,8 @@ while True:
                     if zoom == 1:
                         button(0,3,1)
                         text(0,3,1,0,1,"Zoom",14,0)
-                        preview = 1
+                        if event.button == 3:
+                            preview = 1
                     else:
                         zoom = 0
                         button(0,3,0)
@@ -1644,13 +1658,14 @@ while True:
                     # FPS
                     if (h == 1 and event.button == 1) or event.button == 4:
                         fps +=1
-                        fps = min(fps,50)
+                        fps = min(fps,80)
                     else:
                         fps -=1
                         fps = max(fps,5)
                     pre_frames = 2 * fps
                     text(0,3,3,1,1,str(pre_frames),14,7)
                     text(0,2,3,1,1,str(fps),14,7)
+                    text(0,1,3,1,1,str(v_length/1000) + "  (" + str(int(fps*(v_length/1000))) +")",14,7)
                     mp4_fps = fps
                     restart = 1
                     save_config = 1
@@ -1759,6 +1774,7 @@ while True:
                         q -=1
                         if q < 0:
                             q = len(zzpics)-1
+                    tlen = int(fps*(v_length/1000)) + pre_frames
                     if os.path.getsize(zzpics[q]) > 0:
                         text(0,1,3,1,1,str(q+1) + " / " + str(ram_frames + frames),14,7)
                         if len(zzpics) > 0:
@@ -1768,17 +1784,20 @@ while True:
                             cropped = pygame.transform.scale(image, (xwidth,xheight))
                             windowSurfaceObj.blit(cropped, (0, 0))
                             fontObj = pygame.font.Font(None, 25)
-                            msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,0,0))
+                            msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,255,0))
                             msgRectobj = msgSurfaceObj.get_rect()
                             msgRectobj.topleft = (10,10)
                             windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
-                            msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                            if len(play) >= tlen:
+                                msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                            else:
+                                msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,128,0))
                             msgRectobj = msgSurfaceObj.get_rect()
                             msgRectobj.topleft = (10,35)
                             windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
                             pygame.display.update()
 
-                elif g == 6 and menu == 3 and show == 1 and frames + ram_frames > 0 and len(zzpics) > 0:
+                elif g == 6 and menu == 3 and show == 1 and frames + ram_frames > 0 and len(zzpics) > 0 and event.button == 3:
                     # DELETE A VIDEO
                     sframe = -1
                     eframe = -1
@@ -1830,13 +1849,23 @@ while True:
                         q -=1
                     if len(zzpics) > 0:
                       try:
+                        tlen = int(fps*(v_length/1000)) + pre_frames
+                        play = glob.glob(zzpics[q][:-10] + "*.jpg")
+                        play.sort()
                         image = pygame.image.load(zzpics[q])
                         cropped = pygame.transform.scale(image, (xwidth,xheight))
                         windowSurfaceObj.blit(cropped, (0, 0))
                         fontObj = pygame.font.Font(None, 25)
-                        msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,0,0))
+                        msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,255,0))
                         msgRectobj = msgSurfaceObj.get_rect()
                         msgRectobj.topleft = (10,10)
+                        windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
+                        if len(play) >= tlen:
+                            msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                        else:
+                            msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,128,0))
+                        msgRectobj = msgSurfaceObj.get_rect()
+                        msgRectobj.topleft = (10,35)
                         windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
                         pygame.display.update()
                       except:
@@ -2052,7 +2081,7 @@ while True:
                         
                                          
                      
-                elif ((g == 5 and menu == 3) or (g == 4 and menu == 5)) and show == 1 and frame > 0:
+                elif ((g == 5 and menu == 3) or (g == 4 and menu == 5)) and show == 1 and frame > 0 and event.button == 3:
                     # DELETE from START or to END
                     sframe = -1
                     eframe = -1
@@ -2108,7 +2137,7 @@ while True:
                     pygame.display.update()
 
                     
-                elif g == 4 and menu == 3 and show == 1 and trig == 0:
+                elif g == 4 and menu == 3 and show == 1 and trig == 0 and event.button == 3:
                     # DELETE FRAME or FRAMES
                     remove = glob.glob(zzpics[q][:-10] + "*.jpg")
                     remove.sort()
@@ -2221,6 +2250,7 @@ while True:
                             if os.path.getsize(zzpics[q]) > 0 and st == 0:
                                 text(0,1,3,1,1,str(q+1) + " / " + str(ram_frames + frames),14,7)
                                 if len(zzpics) > 0:
+                                    tlen = int(fps*(v_length/1000)) + pre_frames
                                     image = pygame.image.load(zzpics[q])
                                     cropped = pygame.transform.scale(image, (xwidth,xheight))
                                     windowSurfaceObj.blit(cropped, (0, 0))
@@ -2231,7 +2261,10 @@ while True:
                                     msgRectobj = msgSurfaceObj.get_rect()
                                     msgRectobj.topleft = (10,10)
                                     windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
-                                    msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                                    if len(play) >= tlen:
+                                        msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                                    else:
+                                        msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,128,0))
                                     msgRectobj = msgSurfaceObj.get_rect()
                                     msgRectobj.topleft = (10,35)
                                     windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
@@ -2337,8 +2370,8 @@ while True:
                         apos = int(cap_width/3)
                     a2 = int(a * (cap_width/cwidth))
                     b2 = int(b * (cap_height/xheight))
-                    h_crop2  = int(h_crop * (cap_width/cwidth))
-                    v_crop2  = int(v_crop * (cap_height/xheight))
+                    h_crop2 = int(h_crop * (cap_width/cwidth))
+                    v_crop2 = int(v_crop * (cap_height/xheight))
                     text(0,0,3,1,1,str(vwidths[vformat]) + "x" + str(vheights[vformat]),14,7)
                     pygame.display.update()
                     mask,change = MaskChange()
@@ -2883,6 +2916,28 @@ while True:
                               os.remove(txtconfig[x])
                       os.remove('mylist.txt')
                       txtvids = []
+                      #move MP4 to usb
+                      USB_Files  = []
+                      USB_Files  = (os.listdir("/media/" + h_user[0]))
+                      if len(USB_Files) > 0:
+                        if not os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/") :
+                            os.system('mkdir /media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/")
+                        if not os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + "/Pictures/") :
+                            os.system('mkdir /media/' + h_user[0] + "/" + USB_Files[0] + "/Pictures/")
+                        text(0,8,3,0,1,"MOVING",14,7)
+                        text(0,8,3,1,1,"MP4s",14,7)
+                        spics = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
+                        spics.sort()
+                        for xx in range(0,len(spics)):
+                            movi = spics[xx].split("/")
+                            if os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/" + movi[4]):
+                                os.remove('/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/" + movi[4])
+                            shutil.copy(spics[xx],'/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/")
+                            if os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/" + movi[4]):
+                                os.remove(spics[xx])
+                        spics = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
+                        text(0,8,0,0,1,"MOVE MP4s",14,7)
+                        text(0,8,0,1,1,"to USB",14,7)
                        
                   Videos = glob.glob('/home/' + h_user[0] + '/Pictures/*.jpg')
                   USB_Files  = (os.listdir("/media/" + h_user[0]))
@@ -2934,8 +2989,6 @@ while True:
                     if os.path.exists('mylist.txt'):
                         os.remove('mylist.txt')
                     txtvids = []
-                    text(0,5,2,0,1,"MAKE A",14,7)
-                    text(0,5,2,1,1,"MP4",14,7)
                     USB_Files  = []
                     USB_Files  = (os.listdir("/media/" + h_user[0]))
                     if len(USB_Files) > 0:
@@ -2968,7 +3021,7 @@ while True:
                         restart = 1
                     pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(0,cheight,cwidth,scr_height))
                     
-                    if g == 2:
+                    if g == 2 and event.button != 3:
                         menu = 0
                         old_capture = Capture
                         Capture = 0
@@ -3002,6 +3055,13 @@ while True:
                         text(0,9,3,1,1,str(noise_filters[nr]),14,7)
                         text(0,10,1,0,1,"MAIN MENU",14,7)
 
+                    if g == 2 and event.button == 3:
+                        # PREVIEW
+                        preview +=1
+                        if preview > 1:
+                            preview = 0
+                            text(0,2,1,1,1,"Settings",14,7)
+                            
                     if g == 3:
                         menu = 1
                         old_capture = Capture
@@ -3115,25 +3175,28 @@ while True:
                                     ram_frames +=1
                         q = 0
                         if len(zzpics) > 0:
+                            tlen = int(fps*(v_length/1000)) + pre_frames
                             play = glob.glob(zzpics[q][:-10] + "*.jpg")
                             play.sort()
                             image = pygame.image.load(zzpics[q])
                             cropped = pygame.transform.scale(image, (xwidth,xheight))
                             windowSurfaceObj.blit(cropped, (0, 0))
                             fontObj = pygame.font.Font(None, 25)
-                            msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,0,0))
+                            msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,255,0))
                             msgRectobj = msgSurfaceObj.get_rect()
                             msgRectobj.topleft = (10,10)
                             windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
-                            msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                            if len(play) >= tlen:
+                                msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,0,0))
+                            else:
+                                msgSurfaceObj = fontObj.render((str(q+1) + "/" + str(ram_frames + frames) + " - " + str(len(play)-1)), False, (255,128,0))
                             msgRectobj = msgSurfaceObj.get_rect()
                             msgRectobj.topleft = (10,35)
                             windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
                             pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(0,xheight,cwidth,scr_height))
                             pygame.display.update()
-                            text(0,1,3,1,1,str(q+1) + " / " + str(ram_frames + frames),14,7)
+                            text(0,1,2,1,1,str(q+1) + " / " + str(ram_frames + frames),14,7)
 
-                        text(0,7,9,0,1,"DELETE",14,7)
                         text(0,1,2,0,1,"Video",14,7)
                         text(0,2,2,0,1,"PLAY",14,7)
                         text(0,2,2,1,1,"<<   <    >   >>",14,7)
@@ -3142,8 +3205,10 @@ while True:
                         text(0,4,0,1,1,"FRAME ",14,7)
                         text(0,5,0,0,1,"DELETE",14,7)
                         text(0,5,0,1,1,"START - END",14,7)
+                        text(0,6,3,0,1,"DELETE ",14,7)
                         text(0,6,3,1,1,"VIDEO ",14,7)
-                        text(0,7,9,1,1,"ALL VIDS  ",14,7)
+                        text(0,7,3,0,1,"DELETE",14,7)
+                        text(0,7,3,1,1,"ALL VIDS  ",14,7)
                         text(0,8,2,0,1,"SHOW ALL",14,7)
                         text(0,8,2,1,1,"Videos",14,7)
                         if ram_frames > 0 or frames > 0:
@@ -3153,8 +3218,7 @@ while True:
                             text(0,9,0,0,1,"MAKE",14,7)
                             text(0,9,0,1,1,"MP4",14,7)
                         text(0,10,1,0,1,"MAIN MENU",14,7)
-                        text(0,6,3,0,1,"DELETE ",14,7)
-
+                        
                     if g == 5:
                         menu = 7
                         old_capture = Capture
@@ -3178,8 +3242,8 @@ while True:
                         text(0,6,3,1,1,str(alp),14,7)
                         text(0,7,2,0,1,"MASK Alpha",14,7)
                         text(0,7,3,1,1,str(m_alpha),14,7)
-                        text(0,8,9,0,1,"CLEAR Mask",14,7)
-                        text(0,8,9,1,1," 0       1  ",14,7)
+                        text(0,8,3,0,1,"CLEAR Mask",14,7)
+                        text(0,8,3,1,1," 0       1  ",14,7)
                         if scientif == 1:
                             text(0,9,5,0,1,"Scientific",14,7)
                             text(0,9,3,1,1,str(scientific),14,7)
@@ -3206,13 +3270,15 @@ while True:
                                 text(0,0,3,1,1,"Spot",14,7)
                         text(0,10,1,0,1,"MAIN MENU",14,7)
                         
-                    if g == 8:
+                    if g == 7:
                         menu = 4
                         old_capture = Capture
                         Capture = 0
                         for d in range(0,10):
                             button(0,d,0)
                         text(0,1,2,0,1,"Auto Time",14,7)
+                        text(0,0,2,0,1,"CPU Temp",14,7)
+                        text(0,0,3,1,1,str(int(temp)),14,7)
                         if auto_time > 0:
                             text(0,1,3,1,1,str(auto_time),14,7)
                         else:
@@ -3248,14 +3314,14 @@ while True:
                             usedusb = os.statvfs('/media/' + h_user[0] + "/" + USB_Files[0] + "/Pictures/")
                             USB_storage = ((1 - (usedusb.f_bavail / usedusb.f_blocks)) * 100)
                         if frames + ram_frames > 0 and len(USB_Files) > 0:
-                            text(0,9,9,0,1,"Move JPGs",14,7)
-                            text(0,9,9,1,1,"to USB " + str(int(USB_storage)) + "%",14,7)
+                            text(0,9,3,0,1,"Move JPGs",14,7)
+                            text(0,9,3,1,1,"to USB " + str(int(USB_storage)) + "%",14,7)
                         else:
                             text(0,9,0,0,1,"Move JPGs",14,7)
                             text(0,9,0,1,1,"to USB",14,7)
                         text(0,10,1,0,1,"MAIN MENU",14,7)
                         
-                    if ((g == 7 and menu == -1) or (g == 9 and menu == 3)) and ram_frames + frames > 0:
+                    if ((g == 8 and menu == -1) or (g == 9 and menu == 3)) and ram_frames + frames > 0:
                         menu = 5
                         for d in range(0,10):
                             button(0,d,0)
@@ -3296,7 +3362,6 @@ while True:
                                     y = Tideos[len(Tideos) - 1][:-10]
                                     outvids.append(y)
                                     ram_frames +=1
-                        #q = 0
                         if len(zzpics) > 0:
                             play = glob.glob(zzpics[q][:-10] + "*.jpg")
                             play.sort()
@@ -3306,7 +3371,7 @@ while True:
                             if square == 1:
                                 pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(xheight,0,int(xheight/2.4),xheight))
                             fontObj = pygame.font.Font(None, 25)
-                            msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,0,0))
+                            msgSurfaceObj = fontObj.render(str(zzpics[q]), False, (255,255,0))
                             msgRectobj = msgSurfaceObj.get_rect()
                             msgRectobj.topleft = (10,10)
                             windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
