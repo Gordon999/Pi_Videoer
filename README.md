@@ -33,6 +33,8 @@ sudo apt install python3-opencv
 
 Download PiVideoer.py and copy to /home/《user》
 
+Note buttons with RED text use right mouse click.
+
 MAIN MENU
 
 CAPTURE - switch capturing ON / OFF. Shows number of videos in RAM - on SD card
