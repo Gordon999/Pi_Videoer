@@ -25,7 +25,7 @@ Pi4 recommended, with RaspiOS 64bit. You may need a cooling fan. Also 64GB SD ca
 
 To install:
 
-Install latest FULL RaspiOS based on Bullseye (tested with FULL 32bit and 64bit versions)
+Install latest FULL RaspiOS based on Bullseye or Bookworm (tested with FULL 32bit and 64bit versions)
 
 if using BOOKWORM switch to X11. sudo raspi-config, choose advanced , choose 6A X11 option, reboot.
 
