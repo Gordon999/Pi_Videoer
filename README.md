@@ -13,7 +13,7 @@ Can control focus on a pi v3camera, auto, continuous,  manual or spot. For spot 
 
 Frames are captured to /home/《user》/Pictures, mp4s in /home/《user》/Videos.
 
-Pi4 recommended, with RaspiOS 64bit. You may need a cooling fan. Also 64GB SD card if many videos expected. It can copy to a USB stick if fitted.
+Pi4 4GB/8GB recommended, with RaspiOS 64bit. You may need a cooling fan. Also 64GB SD card if many videos expected. It can copy to a USB stick if fitted.
 
 ## Screenshot
 
