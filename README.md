@@ -1,4 +1,4 @@
-# Pi_Videoer
+8# Pi_Videoer
 
 A python script to capture images triggered by motion , external trigger or manually. Uses Raspberry OS BULLSEYE or BOOKWORM (for BOOKWORM switch to X11 not Wayland) and libcamera-vid.
 It will capture videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files.
@@ -33,7 +33,7 @@ sudo apt install python3-opencv
 
 Download PiVideoer.py and copy to /home/《user》
 
-Note buttons with RED text use right mouse click.
+Note buttons with RED text use right mouse click, others left click. Click on left or right part of button as appropriate.
 
 MAIN MENU
 
