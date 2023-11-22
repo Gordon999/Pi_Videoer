@@ -10,10 +10,12 @@ import signal
 import datetime
 import shutil
 import glob
-import RPi.GPIO as GPIO
+from gpiozero import Button
+from gpiozero import LED
 from gpiozero import CPUTemperature
+from gpiozero import PWMLED
 
-# v1.087
+# v1.088
 
 # set screen size
 scr_width  = 800
@@ -30,8 +32,6 @@ s_trig   = 12
 # ext trigger input gpios (if use_gpio = 1)
 e_trig1   = 21
 e_trig2   = 20
-ext_trig1 = 1 # 0 or 1
-ext_trig2 = 1 # 0 or 1
 
 # fan ctrl gpio (if use_gpio = 1)
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
@@ -56,23 +56,15 @@ if "dtoverlay=vc4-kms-dpi-hyperpixel4,disable-touch" in configtxt and use_gpio =
 
 # setup gpio if enabled
 if use_gpio == 1:
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
-    GPIO.setup(s_trig,GPIO.OUT)
-    GPIO.setup(s_focus,GPIO.OUT)
-    if ext_trig1 == 1:
-        GPIO.setup(e_trig1, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    else:
-        GPIO.setup(e_trig1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    if ext_trig2 == 1:
-        GPIO.setup(e_trig2, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    else:
-        GPIO.setup(e_trig2, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.output(s_trig, GPIO.LOW)
-    GPIO.output(s_focus, GPIO.LOW)
-    GPIO.setup(fan, GPIO.OUT)
-    pwm = GPIO.PWM(fan, 100)
-    pwm.start(0)
+    led_s_trig  = LED(s_trig)
+    led_s_focus = LED(s_focus)
+    led_s_trig.off()
+    led_s_focus.off()
+    led_fan = PWMLED(fan)
+    led_fan.value = 0
+    button_e_trig1 = Button(e_trig1)
+    button_e_trig2 = Button(e_trig2)
+
 
 # set default config parameters
 v_crop        = 80      # size of vert detection window *
@@ -97,7 +89,7 @@ blue          = 1.5     # blue balance *
 meter         = 0       # metering *
 ev            = -1      # eV *
 interval      = 0       # wait between capturing Pictures *
-v_length      = 10000   # video length in mS *
+v_length      = 30000   # video length in mS *
 ES            = 1       # trigger external camera, 0 = OFF, 1 = SHORT, 2 = LONG *
 denoise       = 0       # denoise level *
 quality       = 75      # video quality *
@@ -113,7 +105,7 @@ fan_high      = 78      # fan 100% pwm above this *
 sd_hour       = 22      # Shutdown Hour, 1 - 23, 0 will NOT SHUTDOWN *
 vformat       = 2       # SEE VWIDTHS/VHEIGHTS *
 col_filter    = 3       # 3 = FULL, SEE COL_FILTERS *
-nr            = 2       # Noise reduction *
+nr            = 0       # Noise reduction *
 pre_frames    = fps * 2 # 2 x fps = 2 seconds *
 scientific    = 0       # scientific for HQ camera * 
 v3_f_mode     = 0       # v3 camera focus mode *
@@ -696,7 +688,7 @@ while True:
                     if not os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + "/" + movi[4]):
                         shutil.move(spics[xx],'/media/' + h_user[0] + "/" + USB_Files[0] + "/")
             if use_gpio == 1:
-                pwm.stop()
+                led_fan.value = 0
             pygame.quit()
             poll = p.poll()
             if poll == None:
@@ -708,15 +700,15 @@ while True:
         fan_timer = time.monotonic()
         cpu_temp = str(CPUTemperature()).split("=")
         temp = float(str(cpu_temp[1])[:-1])
-        dc = int(((temp - fan_low)/(fan_high - fan_low)) * 100)
-        dc = max(dc,25)
-        dc = min(dc,100)
+        dc = int(((temp - fan_low)/(fan_high - fan_low)))
+        dc = max(dc,.25)
+        dc = min(dc,1)
         if temp > fan_low and use_gpio == 1:
-            pwm.ChangeDutyCycle(dc)
+            led_fan.value = dc
             if menu ==4 :
-               text(0,7,1,0,1,"Fan High  " + str(dc) + "%",14,7)
+               text(0,7,1,0,1,"Fan High  " + str(int(dc*100)) + "%",14,7)
         elif temp < fan_low and use_gpio == 1:
-            pwm.ChangeDutyCycle(0)
+            led_fan.value = 0
             if menu == 4: 
                 text(0,7,2,0,1,"Fan High degC",14,7)
                 
@@ -905,7 +897,7 @@ while True:
             pygame.draw.rect(windowSurfaceObj, (0,0,0), Rect(0,0,xwidth,xheight))
 
             # external input triggers to RECORD
-            if (GPIO.input(e_trig1) == ext_trig1 or GPIO.input(e_trig2) == ext_trig2):
+            if (button_e_trig1.is_pressed or button_e_trig2.is_pressed):
                 record = 1
                 
             # detection of motion
@@ -922,13 +914,13 @@ while True:
                     detect = 1
                     #record = 0
                     if ES > 0 and use_gpio == 1: # trigger external camera
-                        GPIO.output(s_focus, GPIO.HIGH)
+                        led_s_focus.on()
                         time.sleep(0.25)
-                        GPIO.output(s_trig, GPIO.HIGH)
+                        led_s_trig.on()
                         if ES == 1:
                             time.sleep(0.25)
-                            GPIO.output(s_trig, GPIO.LOW)
-                            GPIO.output(s_focus, GPIO.LOW)
+                            led_s_trig.off()
+                            led_s_focus.off()
                     # capture video frames
                     vid = 1
                     if menu == -1:
@@ -954,8 +946,8 @@ while True:
                     record = 0            
                     # clear LONG EXT trigger
                     if ES == 2 and use_gpio == 1:
-                        GPIO.output(s_trig, GPIO.LOW)
-                        GPIO.output(s_focus, GPIO.LOW)
+                        led_s_trig.off()
+                        led_s_focus.off()
                         
                     # rename pre-frames
                     if trace == 1:
@@ -1336,7 +1328,7 @@ while True:
                             if not os.path.exists('/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/" + movi[4]):
                                 shutil.move(spics[xx],'/media/' + h_user[0] + "/" + USB_Files[0] + "/Videos/")
                     if use_gpio == 1:
-                        pwm.stop()
+                        led_fan.value = 0
                     pygame.quit()
                     poll = p.poll()
                     if poll == None:
@@ -2652,7 +2644,7 @@ while True:
                   Sideos.sort()
                   if len(Sideos) > 0:
                     if use_gpio == 1:
-                        pwm.ChangeDutyCycle(100)
+                        led_fan.value = 1
                     frame = 0
                     text(0,5,3,0,1,"MAKING",14,7)
                     text(0,5,3,1,1,"MP4",14,7)
@@ -2768,7 +2760,7 @@ while True:
                         text(0,8,0,1,1,"to USB",14,7)
                     pygame.display.update()
                     if use_gpio == 1:
-                        pwm.ChangeDutyCycle(dc)
+                        led_fan.value = dc
 
                 elif g == 5 and menu == 5 and event.button == 3 and show == 1 and ((len(USB_Files) > 0 and movtousb == 1) or movtousb == 0):
                   # make MP4 from individual MP4s
@@ -2799,7 +2791,7 @@ while True:
                  Sideos.sort()    
                  if len(Sideos) > 0:
                   if use_gpio == 1:
-                      pwm.ChangeDutyCycle(100)
+                      led_fan.value = 1
                   frame = 0
                   if g == 6:
                       text(0,6,3,0,1,"MAKING",14,7)
@@ -2982,7 +2974,7 @@ while True:
                   USB_Files  = (os.listdir("/media/" + h_user[0]))
                   Mideos = glob.glob('/home/' + h_user[0] + '/Videos/*.mp4')
                   if use_gpio == 1:
-                      pwm.ChangeDutyCycle(dc)
+                      led_fan.value = dc
 
                 elif menu == 5 and g == 8:
                     #move MP4 to usb
