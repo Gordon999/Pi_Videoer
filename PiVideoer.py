@@ -15,7 +15,7 @@ from gpiozero import LED
 from gpiozero import CPUTemperature
 from gpiozero import PWMLED
 
-# v1.089
+# v1.094
 
 # set screen size
 scr_width  = 800
@@ -23,7 +23,7 @@ scr_height = 480
 
 # use GPIO for optional FAN and external camera triggers
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
-use_gpio = 1
+use_gpio = 0
 
 # ext camera trigger gpios (if use_gpio = 1)
 s_focus  = 16
@@ -35,7 +35,8 @@ e_trig2   = 20
 
 # fan ctrl gpio (if use_gpio = 1)
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
-fan      = 14 
+fan      = 14
+fan_ctrl = 1  # 0 for OFF. This is not the Pi5 active cooler !!
 
 # save MP4 to SD / USB, 0 = SD Card, 1 = USB 
 movtousb = 0
@@ -60,10 +61,11 @@ if use_gpio == 1:
     led_s_focus = LED(s_focus)
     led_s_trig.off()
     led_s_focus.off()
-    led_fan = PWMLED(fan)
-    led_fan.value = 0
-    button_e_trig1 = Button(e_trig1)
-    button_e_trig2 = Button(e_trig2)
+    if fan_ctrl == 1:
+        led_fan = PWMLED(fan)
+        led_fan.value = 0
+    button_e_trig1 = Button(e_trig1,pull_up=False)
+    button_e_trig2 = Button(e_trig2,pull_up=False)
 
 
 # set default config parameters
@@ -114,12 +116,13 @@ dspeed        = 10      # detection speed 1-100, 1 = slowest *
 square        = 1       # 0 = normal format , 1 = square format *
 sqpos         = .15     # square format position *
 anno          = 1       # annotate MP4s with date and time , 1 = yes, 0 = no *
-SD_F_Act      = 0       # Action on SD FULL, 0 = STOP, 1 = DELETE OLDEST VIDEO *
+SD_F_Act      = 0       # Action on SD FULL, 0 = STOP, 1 = DELETE OLDEST VIDEO, 2 = COPY TO USB (if fitted) *
 alp           = 255     # alpha, used for stop animations, shows current and last frame *
 m_alpha       = 130     # MASK ALPHA *
 # * adjustable whilst running
 
 # initialise parameters
+camera        = 0
 synced        = 0
 show          = 0
 reboot        = 0
@@ -148,6 +151,21 @@ vheights      = [ 720, 990,1088, 864,1080,1080,1520]
 col_filters   = ['RED','GREEN','BLUE','FULL']
 noise_filters = ['OFF','LOW','HIGH']
 v3_f_modes    = ['auto','manual','continuous']
+
+#check Pi model.
+Pi = 0
+if os.path.exists ('/run/shm/md.txt'): 
+    os.remove("/run/shm/md.txt")
+os.system("cat /proc/cpuinfo >> /run/shm/md.txt")
+with open("/run/shm/md.txt", "r") as file:
+        line = file.readline()
+        while line:
+           line = file.readline()
+           if line[0:5] == "Model":
+               model = line
+mod = model.split(" ")
+if mod[3] == "5":
+    Pi = 5
 
 # check Vid_configXX.txt exists, if not then write default values
 if not os.path.exists(config_file):
@@ -251,14 +269,16 @@ col_timer = 0
 pygame.init()
 
 # Check for Pi Camera version
-cameras = ('No Camera Found!','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS')
-if os.path.exists('test.jpg'):
-   os.rename('test.jpg', 'oldtest.jpg')
-rpistr = "libcamera-jpeg -n -t 1000 -e jpg -o test.jpg "
-os.system(rpistr)
-rpistr = ""
-time.sleep(1)
-if os.path.exists('test.jpg'):
+def Camera_Version():
+  global Pi_Cam,max_gain,igw,igh,cameras,camera
+  cameras = ('No Camera Found!','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS')
+  if os.path.exists('test.jpg'):
+      os.rename('test.jpg', 'oldtest.jpg')
+  rpistr = "rpicam-jpeg --camera " + str(camera) + " -n -t 1000 -e jpg -o test.jpg "
+  os.system(rpistr)
+  rpistr = ""
+  time.sleep(1)
+  if os.path.exists('test.jpg'):
    imagefile = 'test.jpg'
    image = pygame.image.load(imagefile)
    igw = image.get_width()
@@ -285,8 +305,43 @@ if os.path.exists('test.jpg'):
       Pi_Cam = 7
       max_gain = 64
    
-else:
+  else:
    Pi_Cam = 0
+
+Camera_Version()
+
+# DETERMINE NUMBER OF CAMERAS (FOR ARDUCAM MULITPLEXER or Pi5)
+if os.path.exists('libcams.txt'):
+   os.rename('libcams.txt', 'oldlibcams.txt')
+os.system("rpicam-vid --list-cameras >> libcams.txt")
+time.sleep(0.5)
+# read libcams.txt file
+camstxt = []
+with open("libcams.txt", "r") as file:
+    line = file.readline()
+    while line:
+        camstxt.append(line.strip())
+        line = file.readline()
+max_camera = 0
+same_cams  = 0
+cam1 = "1"
+cam2 = "2"
+for x in range(0,len(camstxt)):
+    # Determine if both cameras are the same model
+    if camstxt[x][0:4] == "0 : ":
+        cam1 = camstxt[x][4:10]
+    if camstxt[x][0:4] == "1 : ":
+        cam2 = camstxt[x][4:10]
+    # Determine MAXIMUM number of cameras available 
+    if camstxt[x][0:4] == "3 : " and max_camera < 3:
+        max_camera = 3
+    elif camstxt[x][0:4] == "2 : " and max_camera < 2:
+        max_camera = 2
+    elif camstxt[x][0:4] == "1 : " and max_camera < 1:
+        max_camera = 1
+if max_camera == 1 and cam1 == cam2:
+    same_cams = 1
+
 print(Pi_Cam)
 fxx = 0
 fxy = 0
@@ -298,7 +353,7 @@ h_user = "/home/" + os.getlogin( )
 m_user = "/media/" + os.getlogin( )
 l_len = len(h_user)
 
-if os.path.exists('/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json') and Pi_Cam == 4:
+if os.path.exists('/usr/share/rpicam/ipa/rpi/vc4/imx477_scientific.json') and Pi_Cam == 4:
     scientif = 1
 else:
     scientif = 0
@@ -331,7 +386,7 @@ if os.path.exists('mylist.txt'):
     
 # start Pi Camera subprocess 
 def Camera_start(wx,hx,zoom):
-    global sqpos,square,scientif,fxx,fxy,fxz,Pi_Cam,v3_f_modes,v3_f_mode,scientific,SD_storage,trace,p,red,blue,contrast,brightness,gain,speed,modes,mode,ev,ES,cap_width,cap_height,pre_frames,awbs,awb,meters,meter,sharpness,saturation,denoise,cwidth,xheight
+    global camera,sqpos,square,scientif,fxx,fxy,fxz,Pi_Cam,v3_f_modes,v3_f_mode,scientific,SD_storage,trace,p,red,blue,contrast,brightness,gain,speed,modes,mode,ev,ES,cap_width,cap_height,pre_frames,awbs,awb,meters,meter,sharpness,saturation,denoise,cwidth,xheight
     if trace == 1:
         print ("Step 1 START SUB PROC")
     # clear ram
@@ -341,7 +396,7 @@ def Camera_start(wx,hx,zoom):
     st = os.statvfs("/run/shm/")
     freeram = (st.f_bavail * st.f_frsize)/1100000
     ss = str(int(sfreeram)) + "MB - " + str(int(SD_storage)) + "%"
-    rpistr = "libcamera-vid -t 0 --segment 1 --codec mjpeg -q " + str(quality)
+    rpistr = "rpicam-vid --camera " + str(camera) + " -t 0 --segment 1 --codec mjpeg -q " + str(quality)
     rpistr += " -n -o /run/shm/test%06d.jpg --contrast " + str(contrast/100) + " --brightness " + str(brightness/100)
     if square == 1:
         rpistr += " --width " + str(hx) + " --height " + str(hx)
@@ -388,13 +443,14 @@ def Camera_start(wx,hx,zoom):
 # check for usb_stick
 USB_Files  = []
 USB_Files  = (os.listdir(m_user + "/"))
+print(USB_Files)
 if len(USB_Files) > 0:
     usedusb = os.statvfs(m_user + "/" + USB_Files[0] + "/")
     USB_storage = ((1 - (usedusb.f_bavail / usedusb.f_blocks)) * 100)
-    if not os.path.exists(m_user + "/" + USB_Files[0] + "/Videos/") :
-        os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Videos/")
-    if not os.path.exists(m_user + "/" + USB_Files[0] + "/Pictures/") :
-        os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Pictures/")
+    if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Videos/") :
+        os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Videos/")
+    if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Pictures/") :
+        os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Pictures/")
    
 old_cap = Capture
 
@@ -420,7 +476,7 @@ for x in range(0,len(Sideos)):
 USB_Files  = []
 USB_Files  = (os.listdir(m_user + "/"))
 if len(USB_Files) > 0:
-    Sideos = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*.jpg")
+    Sideos = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*.jpg")
     Sideos.sort()
     for x in range(0,len(Sideos)):
         Tideos = Sideos[x].split("/")
@@ -537,7 +593,7 @@ def main_menu():
         zzpics.append(rpics[x])
     USB_Files  = (os.listdir(m_user))
     if len(USB_Files) > 0:
-        upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*99999.jpg")
+        upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*99999.jpg")
         for x in range(0,len(upics)):
             zzpics.append(upics[x])
     zzpics.sort()
@@ -685,9 +741,9 @@ while True:
                 spics.sort()
                 for xx in range(0,len(spics)):
                     movi = spics[xx].split("/")
-                    if not os.path.exists(m_user + "/" + USB_Files[0] + "/" + movi[4]):
-                        shutil.move(spics[xx],m_user[0] + "/" + USB_Files[0] + "/")
-            if use_gpio == 1:
+                    if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/" + movi[4]):
+                        shutil.move(spics[xx],m_user[0] + "/'" + USB_Files[0] + "'/")
+            if use_gpio == 1 and fan_ctrl == 1:
                 led_fan.value = 0
             pygame.quit()
             poll = p.poll()
@@ -696,21 +752,22 @@ while True:
             time.sleep(5)
             os.system("sudo shutdown -h now")
 
-        # set fan speed    
-        fan_timer = time.monotonic()
-        cpu_temp = str(CPUTemperature()).split("=")
-        temp = float(str(cpu_temp[1])[:-1])
-        dc = ((temp - fan_low)/(fan_high - fan_low))
-        dc = max(dc,.25)
-        dc = min(dc,1)
-        if temp > fan_low and use_gpio == 1:
-            led_fan.value = dc
-            if menu ==4 :
-               text(0,7,1,0,1,"Fan High  " + str(int(dc*100)) + "%",14,7)
-        elif temp < fan_low and use_gpio == 1:
-            led_fan.value = 0
-            if menu == 4: 
-                text(0,7,2,0,1,"Fan High degC",14,7)
+        # set fan speed
+        if fan_ctrl == 1:
+            fan_timer = time.monotonic()
+            cpu_temp = str(CPUTemperature()).split("=")
+            temp = float(str(cpu_temp[1])[:-1])
+            dc = ((temp - fan_low)/(fan_high - fan_low))
+            dc = max(dc,.25)
+            dc = min(dc,1)
+            if temp > fan_low and use_gpio == 1:
+                led_fan.value = dc
+                if menu ==4 :
+                    text(0,7,1,0,1,"Fan High  " + str(int(dc*100)) + "%",14,7)
+            elif temp < fan_low and use_gpio == 1:
+                led_fan.value = 0
+                if menu == 4: 
+                    text(0,7,2,0,1,"Fan High degC",14,7)
                 
         # get RAM free space
         st = os.statvfs("/run/shm/")
@@ -1079,10 +1136,10 @@ while True:
                             print ("Step 12 USED SD CARD > LIMIT")
                         os.killpg(p.pid, signal.SIGTERM)
                         restart = 1
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Videos/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Videos/")
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Pictures/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Pictures/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Videos/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Videos/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Pictures/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Pictures/")
                         text(0,0,2,0,1,"CAPTURE",16,0)
                         while SD_storage > SD_limit:
                             zzpics = glob.glob(h_user + '/Pictures/*.jpg')
@@ -1095,8 +1152,8 @@ while True:
                                         fjs = move[tt].split("/")
                                         fj = fjs[len(fjs)-1]
                                         #print(fj)
-                                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Pictures/" + fj):
-                                            shutil.move(move[tt],m_user + "/" + USB_Files[0] + "/Pictures/")
+                                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Pictures/" + fj):
+                                            shutil.move(move[tt],m_user + "/'" + USB_Files[0] + "'/Pictures/")
                                         else:
                                             os.remove(move[tt])
                             free = (os.statvfs('/'))
@@ -1327,7 +1384,7 @@ while True:
                             movi = spics[xx].split("/")
                             if not os.path.exists(m_user + "/" + USB_Files[0] + "/Videos/" + movi[4]):
                                 shutil.move(spics[xx],m_user + "/" + USB_Files[0] + "/Videos/")
-                    if use_gpio == 1:
+                    if use_gpio == 1 and fan_ctrl == 1:
                         led_fan.value = 0
                     pygame.quit()
                     poll = p.poll()
@@ -1342,8 +1399,8 @@ while True:
                     text(0,9,3,0,1,"Moving JPGs",14,7)
                     text(0,9,3,1,1,"to USB",14,7)
                     if len(USB_Files) > 0 and frames + ram_frames > 0:
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Pictures/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Pictures/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Pictures/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Pictures/")
                         zpics = glob.glob( h_user + '/Pictures/*.jpg')
                         zpics.sort()
                         outvids = []
@@ -1374,7 +1431,7 @@ while True:
                             xzpics = glob.glob('/run/shm/' + outvids[xz] + '*.jpg')
                             xzpics.sort()
                             for xx in range(0,len(xzpics)):
-                                shutil.move(xzpics[xx],m_user + "/" + USB_Files[0] + "/Pictures/")
+                                shutil.move(xzpics[xx],m_user + "/'" + USB_Files[0] + "'/Pictures/")
                         ram_frames = 0
                         vf = str(ram_frames) + " - " + str(frames)
                     text(0,9,2,0,1,"Move JPGs",14,7)
@@ -1821,7 +1878,7 @@ while True:
                     for x in range(0,len(rpics)):
                          zzpics.append(rpics[x])
                     if len(USB_Files) > 0:
-                        upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*99999.jpg")
+                        upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*99999.jpg")
                         for x in range(0,len(upics)):
                             zzpics.append(upics[x])
                     zzpics.sort()
@@ -1910,7 +1967,7 @@ while True:
                                 os.remove(zpics[xx])
                             frames = 0
                             if len(USB_Files) > 0:
-                                upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*.jpg")
+                                upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*.jpg")
                                 for xx in range(0,len(upics)):
                                     os.remove(upics[xx])
                             vf = str(ram_frames) + " - " + str(frames)
@@ -2077,7 +2134,6 @@ while True:
                     # DELETE from START or to END
                     sframe = -1
                     eframe = -1
-                    
                     text(0,3,3,1,1," ",14,7)
                     if menu == 3:
                         text(0,5,3,0,1,"DELETING",14,7)
@@ -2085,7 +2141,7 @@ while True:
                         text(0,4,3,0,1,"DELETING",14,7)
                     remove = glob.glob(zzpics[q][:-10] + "*.jpg")
                     remove.sort()
-                    if (h == 1 and event.button == 1) or event.button == 4:
+                    if h == 1: # and event.button == 1) or event.button == 4:
                         for tt in range(int(frame) + 1,len(remove)-1):
                             if remove[tt][40:45] != "99999":
                                 os.remove(remove[tt])
@@ -2189,7 +2245,7 @@ while True:
                         Videos = glob.glob(h_user + '/Pictures/*.jpg')
                         USB_Files  = (os.listdir(m_user))
                         if len(USB_Files) > 0:
-                            upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*.jpg")
+                            upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*.jpg")
                             upics.sort()
                             for x in range(0,len(upics)):
                                 Videos.append(upics[x])
@@ -2413,6 +2469,43 @@ while True:
                         pygame.image.save(nmask,h_user + '/CMask.bmp')
                         mask,change = MaskChange()
                         
+                elif g == 9 and menu == 7 :
+                    # SWITCH CAMERA
+                    camera += 1
+                    if camera > max_camera:
+                        camera = 0
+                    poll = p.poll()
+                    if poll == None:
+                        os.killpg(p.pid, signal.SIGTERM)
+                    text(0,9,3,1,1,str(camera),14,7)
+                    if same_cams == 0:
+                        Camera_Version()
+                    if Pi_Cam == 3:
+                        text(0,0,2,0,1,"Focus",14,7)
+                        text(0,0,3,1,1,v3_f_modes[v3_f_mode],14,7)
+                        if v3_f_mode == 1:
+                            if os.path.exists("ctrls.txt"):
+                                os.remove("ctrls.txt")
+                            os.system("v4l2-ctl -d /dev/v4l-subdev1 --list-ctrls >> ctrls.txt")
+                            restart = 1
+                            time.sleep(0.25)
+                            ctrlstxt = []
+                            with open("ctrls.txt", "r") as file:
+                                line = file.readline()
+                                while line:
+                                    ctrlstxt.append(line.strip())
+                                    line = file.readline()
+                            foc_ctrl = ctrlstxt[3].split('value=')
+                            v3_focus = int(foc_ctrl[1])
+                            text(0,1,2,0,1,"Focus Manual",14,7)
+                            text(0,1,3,1,1,str(v3_focus),14,7)
+                        if fxz != 1:
+                            text(0,0,3,1,1,"Spot",14,7)
+                    else:
+                        text(0,0,2,0,1,"     ",14,7)
+                        text(0,0,3,1,1,"     ",14,7)
+                        
+                    restart = 1
 
                 elif g == 1 and menu == 4 :
                     # AUTO TIME
@@ -2466,7 +2559,7 @@ while True:
                         text(0,4,3,1,1,"To USB",14,7)
                     save_config = 1
                     
-                elif g == 5 and menu == 4 and use_gpio == 1:
+                elif g == 5 and menu == 4 and use_gpio == 1 and fan_ctrl == 1:
                     # FAN TIME
                     if (h == 0 and event.button == 1) or event.button == 5:
                         fan_time -=1
@@ -2477,7 +2570,7 @@ while True:
                     text(0,5,3,1,1,str(fan_time),14,7)
                     save_config = 1
                     
-                elif g == 6 and menu == 4 and use_gpio == 1:
+                elif g == 6 and menu == 4 and use_gpio == 1 and fan_ctrl == 1:
                     # FAN LOW
                     if (h == 0 and event.button == 1) or event.button == 5:
                         fan_low -=1
@@ -2488,7 +2581,7 @@ while True:
                     text(0,6,3,1,1,str(fan_low),14,7)
                     save_config = 1
 
-                elif g == 7 and menu == 4 and use_gpio == 1:
+                elif g == 7 and menu == 4 and use_gpio == 1 and fan_ctrl == 1:
                     # FAN HIGH
                     if (h == 0 and event.button == 1) or event.button == 5:
                         fan_high -=1
@@ -2637,13 +2730,13 @@ while True:
                   for x in range(0,len(Rideos)-1):
                       Sideos.append(Rideos[x])
                   if len(USB_Files) > 0:
-                        Uideos = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*.jpg")
+                        Uideos = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*.jpg")
                         Uideos.sort()
                         for x in range(0,len(Uideos)-1):
                             Sideos.append(Uideos[x])
                   Sideos.sort()
                   if len(Sideos) > 0:
-                    if use_gpio == 1:
+                    if use_gpio == 1 and fan_ctrl == 1:
                         led_fan.value = 1
                     frame = 0
                     text(0,5,3,0,1,"MAKING",14,7)
@@ -2670,7 +2763,7 @@ while True:
                     mins = int(outvids[q][8:10])
                     secs = int(outvids[q][10:12])
                     if movtousb == 1 and len(USB_Files) > 0:
-                        new_dir = m_user + "/" + USB_Files[0] + "/Videos"
+                        new_dir = m_user + "/'" + USB_Files[0] + "'/Videos"
                     else:
                         new_dir = h_user + "/Videos"
                     if not os.path.exists(new_dir):
@@ -2759,7 +2852,7 @@ while True:
                         text(0,8,0,0,1,"MOVE MP4s",14,7)
                         text(0,8,0,1,1,"to USB",14,7)
                     pygame.display.update()
-                    if use_gpio == 1:
+                    if use_gpio == 1 and fan_ctrl == 1:
                         led_fan.value = dc
 
                 elif g == 5 and menu == 5 and event.button == 3 and show == 1 and ((len(USB_Files) > 0 and movtousb == 1) or movtousb == 0):
@@ -2785,12 +2878,12 @@ while True:
                  for x in range(0,len(Rideos)-1):
                      Sideos.append(Rideos[x])
                  if len(USB_Files) > 0:
-                     Uideos = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*.jpg")
+                     Uideos = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*.jpg")
                      for x in range(0,len(Uideos)-1):
                          Sideos.append(Uideos[x])
                  Sideos.sort()    
                  if len(Sideos) > 0:
-                  if use_gpio == 1:
+                  if use_gpio == 1 and fan_ctrl == 1:
                       led_fan.value = 1
                   frame = 0
                   if g == 6:
@@ -2801,7 +2894,7 @@ while True:
                       text(0,7,3,1,1,"FULL MP4",14,7)
                   pygame.display.update()
                   if movtousb == 1 and len(USB_Files) > 0:
-                      new_dir = m_user + "/" + USB_Files[0] + "/Videos/"
+                      new_dir = m_user + "/'" + USB_Files[0] + "'/Videos/"
                   else:
                       new_dir = h_user + "/Videos/"
                   outvids = []
@@ -2855,7 +2948,7 @@ while True:
                     mins = int(outvids[w][8:10])
                     secs = int(outvids[w][10:12])
                     if movtousb == 1 and len(USB_Files) > 0:
-                        new_dir = m_user + "/" + USB_Files[0] + "/Videos"
+                        new_dir = m_user + "/'" + USB_Files[0] + "'/Videos"
                     else:
                         new_dir = h_user + "/Videos"
                     if not os.path.exists(new_dir):
@@ -2912,10 +3005,10 @@ while True:
                       USB_Files  = []
                       USB_Files  = (os.listdir(m_user))
                       if len(USB_Files) > 0:
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Videos/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Videos/")
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Pictures/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Pictures/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Videos/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Videos/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Pictures/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Pictures/")
                         text(0,8,3,0,1,"MOVING",14,7)
                         text(0,8,3,1,1,"MP4s",14,7)
                         spics = glob.glob(h_user + '/Videos/*.mp4')
@@ -2934,7 +3027,7 @@ while True:
                   Videos = glob.glob(h_user + '/Pictures/*.jpg')
                   USB_Files  = (os.listdir(m_user))
                   if len(USB_Files) > 0:
-                      upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*.jpg")
+                      upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*.jpg")
                       upics.sort()
                       for x in range(0,len(upics)):
                           Videos.append(upics[x])
@@ -2973,7 +3066,7 @@ while True:
                   restart = 1
                   USB_Files  = (os.listdir(m_user))
                   Mideos = glob.glob(h_user + '/Videos/*.mp4')
-                  if use_gpio == 1:
+                  if use_gpio == 1 and fan_ctrl == 1:
                       led_fan.value = dc
 
                 elif menu == 5 and g == 8:
@@ -2984,10 +3077,10 @@ while True:
                     USB_Files  = []
                     USB_Files  = (os.listdir(m_user))
                     if len(USB_Files) > 0:
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Videos/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Videos/")
-                        if not os.path.exists(m_user + "/" + USB_Files[0] + "/Pictures/") :
-                            os.system('mkdir ' + m_user + "/" + USB_Files[0] + "/Pictures/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Videos/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Videos/")
+                        if not os.path.exists(m_user + "/'" + USB_Files[0] + "'/Pictures/") :
+                            os.system('mkdir ' + m_user + "/'" + USB_Files[0] + "'/Pictures/")
                         text(0,8,3,0,1,"MOVING",14,7)
                         text(0,8,3,1,1,"MP4s",14,7)
                         spics = glob.glob( h_user + '/Videos/*.mp4')
@@ -3146,7 +3239,7 @@ while True:
                             zzpics.append(rpics[x])
                         USB_Files  = (os.listdir(m_user))
                         if len(USB_Files) > 0:
-                            upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*99999.jpg")
+                            upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*99999.jpg")
                             upics.sort()
                             for x in range(0,len(upics)):
                                 zzpics.append(upics[x])
@@ -3236,6 +3329,8 @@ while True:
                         text(0,7,3,1,1,str(m_alpha),14,7)
                         text(0,8,3,0,1,"CLEAR Mask",14,7)
                         text(0,8,3,1,1," 0       1  ",14,7)
+                        text(0,9,2,0,1,"Camera",14,7)
+                        text(0,9,3,1,1,str(camera),14,7)
                         if scientif == 1:
                             text(0,9,5,0,1,"Scientific",14,7)
                             text(0,9,3,1,1,str(scientific),14,7)
@@ -3287,12 +3382,13 @@ while True:
                         else:
                             text(0,4,3,1,1,"To USB",14,7)
                         if use_gpio == 1:
-                            text(0,5,2,0,1,"Fan Time S",14,7)
-                            text(0,5,3,1,1,str(fan_time),14,7)
-                            text(0,6,2,0,1,"Fan Low degC",14,7)
-                            text(0,6,3,1,1,str(fan_low),14,7)
-                            text(0,7,2,0,1,"Fan High degC",14,7)
-                            text(0,7,3,1,1,str(fan_high),14,7)
+                            if fan_ctrl == 1:
+                                text(0,5,2,0,1,"Fan Time S",14,7)
+                                text(0,5,3,1,1,str(fan_time),14,7)
+                                text(0,6,2,0,1,"Fan Low degC",14,7)
+                                text(0,6,3,1,1,str(fan_low),14,7)
+                                text(0,7,2,0,1,"Fan High degC",14,7)
+                                text(0,7,3,1,1,str(fan_high),14,7)
                             text(0,8,2,0,1,"Ext. Trigger",14,7)
                             if ES == 0:
                                 text(0,8,3,1,1,"OFF",14,7)
@@ -3335,7 +3431,7 @@ while True:
                              zzpics.append(rpics[x])
                         USB_Files  = (os.listdir(m_user))
                         if len(USB_Files) > 0:
-                            upics = glob.glob(m_user + "/" + USB_Files[0] + "/Pictures/*99999.jpg")
+                            upics = glob.glob(m_user + "/'" + USB_Files[0] + "'/Pictures/*99999.jpg")
                             upics.sort()
                             for x in range(0,len(upics)):
                                 zzpics.append(upics[x])
