@@ -15,17 +15,17 @@ from gpiozero import LED
 from gpiozero import CPUTemperature
 from gpiozero import PWMLED
 
-# v1.094
+# v1.096
 
 # set screen size
 scr_width  = 800
 scr_height = 480
 
-# use GPIO for optional FAN and external camera triggers
+# use GPIO for external camera triggers and optional FAN.
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
 use_gpio = 0
 
-# ext camera trigger gpios (if use_gpio = 1)
+# ext camera trigger output gpios (if use_gpio = 1)
 s_focus  = 16
 s_trig   = 12
 
@@ -33,44 +33,18 @@ s_trig   = 12
 e_trig1   = 21
 e_trig2   = 20
 
-# fan ctrl gpio (if use_gpio = 1)
+# fan ctrl gpio (if use_gpio = 1) This is not the Pi5 active cooler !!
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
 fan      = 14
-fan_ctrl = 1  # 0 for OFF. This is not the Pi5 active cooler !!
+fan_ctrl = 1  # 0 for OFF. 
 
 # save MP4 to SD / USB, 0 = SD Card, 1 = USB 
 movtousb = 0
-
-# read /boot/config.txt file
-configtxt = []
-with open("/boot/config.txt", "r") as file:
-    line = file.readline()
-    while line:
-        configtxt.append(line.strip())
-        line = file.readline()
-        
-# disable gpio if using hyperpixel4 display (all gpios in use)
-if "dtoverlay=vc4-kms-dpi-hyperpixel4,disable-touch" in configtxt and use_gpio == 1:
-    fan     = 27
-    s_focus = 10
-    s_trig  = 11
-
-# setup gpio if enabled
-if use_gpio == 1:
-    led_s_trig  = LED(s_trig)
-    led_s_focus = LED(s_focus)
-    led_s_trig.off()
-    led_s_focus.off()
-    if fan_ctrl == 1:
-        led_fan = PWMLED(fan)
-        led_fan.value = 0
-    button_e_trig1 = Button(e_trig1,pull_up=False)
-    button_e_trig2 = Button(e_trig2,pull_up=False)
-
+      
 
 # set default config parameters
-v_crop        = 80      # size of vert detection window *
-h_crop        = 80      # size of hor detection window *
+v_crop        = 80      # size of vertical detection window *
+h_crop        = 80      # size of horizontal detection window *
 threshold     = 20      # minm change in pixel luminance *
 threshold2    = 255     # maxm change in pixel luminance *
 detection     = 10      # % of pixels detected to trigger, in % *
@@ -166,6 +140,21 @@ with open("/run/shm/md.txt", "r") as file:
 mod = model.split(" ")
 if mod[3] == "5":
     Pi = 5
+
+# setup gpio if enabled
+if use_gpio == 1:
+    # external output triggers
+    led_s_trig  = LED(s_trig)
+    led_s_focus = LED(s_focus)
+    led_s_trig.off()
+    led_s_focus.off()
+    # optional fan control
+    if fan_ctrl == 1:
+        led_fan = PWMLED(fan)
+        led_fan.value = 0
+    # external input triggers
+    button_e_trig1 = Button(e_trig1,pull_up=False)
+    button_e_trig2 = Button(e_trig2,pull_up=False)
 
 # check Vid_configXX.txt exists, if not then write default values
 if not os.path.exists(config_file):
@@ -734,8 +723,9 @@ while True:
             # move MP4s to USB if present
             USB_Files  = []
             USB_Files  = (os.listdir(m_user))
-            usedusb = os.statvfs(m_user + "/" + USB_Files[0] + "/")
-            USB_storage = ((1 - (usedusb.f_bavail / usedusb.f_blocks)) * 100)
+            if len(USB_Files) > 0:
+                usedusb = os.statvfs(m_user + "/" + USB_Files[0] + "/")
+                USB_storage = ((1 - (usedusb.f_bavail / usedusb.f_blocks)) * 100)
             if len(USB_Files) > 0 and USB_storage < 90:
                 spics = glob.glob(h_user + '/Videos/*.mp4')
                 spics.sort()
@@ -954,8 +944,9 @@ while True:
             pygame.draw.rect(windowSurfaceObj, (0,0,0), Rect(0,0,xwidth,xheight))
 
             # external input triggers to RECORD
-            if (button_e_trig1.is_pressed or button_e_trig2.is_pressed):
-                record = 1
+            if use_gpio == 1:
+                if (button_e_trig1.is_pressed or button_e_trig2.is_pressed):
+                    record = 1
                 
             # detection of motion
             if (((sar5/diff) * 100 > detection and (sar5/diff) * 100 < det_high) or (time.monotonic() - timer10 > interval and timer10 != 0 and threshold == 0) or record == 1) and menu == -1:
@@ -1936,6 +1927,7 @@ while True:
                     if square == 1:
                         pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(xheight,0,int(xheight/2.3),xheight))
                     pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(0,cheight,cwidth,scr_height))
+                    time.sleep(0.5)
                    
                         
                 elif g == 7 and menu == 3:
@@ -3364,8 +3356,20 @@ while True:
                         for d in range(0,10):
                             button(0,d,0)
                         text(0,1,2,0,1,"Auto Time",14,7)
-                        text(0,0,2,0,1,"CPU Temp",14,7)
-                        text(0,0,3,1,1,str(int(temp)),14,7)
+                        if Pi == 5:
+                            text(0,0,2,0,1,"CPU Temp/FAN",13,7)
+                            if os.path.exists ('fantxt.txt'): 
+                                os.remove("fantxt.txt")
+                            os.system("cat /sys/devices/platform/cooling_fan/hwmon/*/fan1_input >> fantxt.txt")
+                            time.sleep(0.25)
+                            with open("fantxt.txt", "r") as file:
+                                line = file.readline()
+                                if line == "":
+                                    line = 0
+                            text(0,0,3,1,1,str(int(temp)) + " / " + str(int(line)),14,7)
+                        else:
+                            text(0,0,2,0,1,"CPU Temp",14,7)
+                            text(0,0,3,1,1,str(int(temp)),14,7)
                         if auto_time > 0:
                             text(0,1,3,1,1,str(auto_time),14,7)
                         else:
