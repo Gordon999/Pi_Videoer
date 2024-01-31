@@ -1,9 +1,13 @@
 # Pi_Videoer
 
-A python script to capture images from Pi v1,2,3 , HQ or GS cameras, triggered by motion , external trigger or manually. Uses Raspberry OS BULLSEYE or BOOKWORM (for BOOKWORM switch to X11 not Wayland) and libcamera-vid.
+A python script to capture images from Pi v1,2,3 , HQ or GS cameras (or Arducam 16/64MP AF cameras), triggered by motion , external trigger or manually. Uses Raspberry OS BULLSEYE or BOOKWORM (for BOOKWORM switch to X11 not Wayland) and libcamera-vid.
 It will capture videos as still frames, upto 30fps at 1920 x 1080, which can be converted into MP4 files.
 
 lt also captures frames before the trigger frame, default is 2 seconds but user settable.
+
+On a Pi5 the 2nd camera will take highest resolution stills after the trigger.
+
+Pi v3 or Arducam cameras can be auto / manually focussed. Pi v3 also can do spot focus.
 
 lt has some editing facilities, delete individual frames, delete a series of frames, delete all frames from start or to end of video,or delete all frames.
 
