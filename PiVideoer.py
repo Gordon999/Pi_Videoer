@@ -1523,13 +1523,13 @@ while True:
            oldimg[:] = gray[:]
         vidjr = 0
 
-        if fcount < max_fcount and Pi != 5:
-            Capture = 0
-        elif Pi != 5:
-            Capture = old_capture
-            if menu == -1:
-                text(0,9,3,0,1," ",14,7)
-                text(0,9,3,1,1," ",14,7)
+        #if fcount < max_fcount and Pi != 5:
+        #    Capture = 0
+        #elif Pi != 5:
+        #   Capture = old_capture
+        #   if menu == -1:
+        #        text(0,9,3,0,1," ",14,7)
+        #        text(0,9,3,1,1," ",14,7)
 
         # ARDUCAM AF
         if (Pi_Cam == 5 or Pi_Cam == 6) and v3_f_mode == 0 and fcount < max_fcount and Pi != 5:
