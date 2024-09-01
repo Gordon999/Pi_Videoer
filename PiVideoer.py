@@ -12,12 +12,12 @@ import shutil
 import glob
 from gpiozero import Button
 from gpiozero import LED
-from gpiozero import CPUTemperature
+#from gpiozero import CPUTemperature
 from gpiozero import PWMLED
 import sys
 import random
 
-version = "1.14"
+version = "1.15"
 
 # set screen size
 scr_width  = 800
@@ -38,7 +38,7 @@ e_trig2   = 20
 # fan ctrl gpio (if use_gpio = 1) This is not the Pi5 active cooler !!
 # DISABLE Pi FAN CONTROL in Preferences > Performance to GPIO 14 !!
 fan      = 14
-fan_ctrl = 1  # 0 for OFF. 
+fan_ctrl = 0  # 0 for OFF. 
 
 # save MP4 to SD / USB, 0 = SD Card, 1 = USB 
 movtousb = 0
@@ -135,12 +135,12 @@ en_photo      = 0
 restart2      = 0
 timer2        = time.monotonic()
 res2          = 0
-fcount        = 0
 max_fcount    = 10
 gcount        = 0
 fstep         = 20
 old_foc       = 0
 min_foc       = 15
+rep           = 0
 
 # Camera max exposure (Note v1 is currently 1 second not the raspistill 6 seconds)
 # whatever value set it MUST be in shutters list !!
@@ -158,11 +158,11 @@ Home_Files.append(os.getlogin())
 pic     = "Pictures"
 pic_dir = "/home/" + Home_Files[0]+ "/" + pic + "/"
 
-cameras       = ['Unknown','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS']
-camids        = ['','ov5647','imx219','imx708','imx477','imx519','arduc','imx296']
-max_gains     = [64,     255,      40,      64,      88,      64,      64,      64]
-max_shutters  = [0,   max_v1, max_v2,   max_v3,  max_hq,max_16mp,max_64mp,  max_gs]
-mags          = [64,     255,      40,      64,      88,      64,      64,      64]
+cameras       = ['Unknown','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS','Arducam Owlsight']
+camids        = ['','ov5647','imx219','imx708','imx477','imx519','arduca','imx296','ov64a4']
+max_gains     = [64,     255,      40,      64,      88,      64,      64,      64,64]
+max_shutters  = [0,   max_v1, max_v2,   max_v3,  max_hq,max_16mp,max_64mp,  max_gs,max_64mp]
+mags          = [64,     255,      40,      64,      88,      64,      64,      64,64]
 modes         = ['off','normal','sport']
 meters        = ['centre','spot','average']
 awbs          = ['off','auto','incandescent','tungsten','fluorescent','indoor','daylight','cloudy']
@@ -261,8 +261,6 @@ nr          = config[34]
 pre_frames  = config[35]
 auto_time   = config[36]
 ram_limit   = config[37]
-#v3_f_mode   = config[38]
-#v3_focus    = config[39]
 square      = config[40]
 sqpos       = config[41]/100
 mp4_fps     = config[42]
@@ -270,7 +268,6 @@ anno        = config[43]
 SD_F_Act    = config[44]
 dspeed      = config[45]
 photo_timer = config[46]/10
-#camera      = config[47]
 mode2       = config[48]
 speed2      = config[49]
 gain2       = config[50]
@@ -309,8 +306,10 @@ def Camera_Version():
   vheights = []
   cwidth = scr_width - bw
   cheight = scr_height
+  #print(camstxt)
   for x in range(0,len(camstxt)):
     # Determine if both cameras are the same model
+    #print(camstxt[x][4:10])
     if camstxt[x][0:4] == "0 : ":
         cam1 = camstxt[x][4:10]
     elif camstxt[x][0:4] == "1 : ":
@@ -351,9 +350,10 @@ def Camera_Version():
   if Pi_Cam != 7:
       vwidths.insert(0, 1280)
       vheights.insert(0,720)
+  else:
       vwidths.insert(0,1920)
       vheights.insert(0,1080)
-  #print(vwidths,vheights)
+
   max_gain = max_gains[Pi_Cam]
   if vformat > len(vwidths) - 1 or camera == 1:
       vformat = len(vwidths) - 1
@@ -379,17 +379,18 @@ def Camera_Version():
   h_crop2  = int(h_crop * (cap_width/cwidth))
   v_crop2  = int(v_crop * (cap_height/xheight))
 
-  if Pi_Cam == -1:
-        print("No Camera Found")
-        pygame.display.quit()
-        sys.exit()
+  if Pi_Cam != -1:
+      print("Camera: ", camids[Pi_Cam])
+  else:
+      print("No Camera Found")
+      pygame.display.quit()
+      sys.exit()
             
 Camera_Version()
 
 print(Pi_Cam,cam1,cam2)
 
 #set screen image width
-
 if square == 1:
     apos = 100
 else:
@@ -477,8 +478,6 @@ if v4 != -1:
     vid4.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     vid4.set(cv2.CAP_PROP_FRAME_HEIGHT,height)
 print(v1,v2,v3,v4)
-
-    
             
 fxx = 0
 fxy = 0
@@ -586,7 +585,7 @@ def Camera0_start(wx,hx,zoom):
             rpistr += " --lens-position " + str(v3_focus/100)
       if Pi_Cam == 3 and zoom == 0:
         rpistr += " --autofocus-window " + str(fxx) + "," + str(fxy) + "," + str(fxz) + "," + str(fxz)
-      if scientific == 1 and Pi_cam == 4:
+      if scientific == 1 and Pi_Cam == 4:
         rpistr += " --tuning-file /usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json"
       if (Pi_Cam == 5 or Pi_Cam == 6) and v3_f_mode == 1 and Pi == 5:
         if os.path.exists('/usr/share/libcamera/ipa/rpi/pisp/imx519mf.json'):
@@ -609,7 +608,6 @@ def Camera0_start(wx,hx,zoom):
         poll = p.poll()
     if poll != None:
         print ("Failed to start sub-process")
-
 
 # check for usb_stick
 USB_Files  = []
@@ -755,7 +753,7 @@ def text(col,row,fColor,top,upd,msg,fsize,bcolor):
       pygame.display.update(bx, by, bw, bh)
 
 def main_menu():
-    global ram_frames,frames,menu,sd_hour,pf,vf,synced,Capture,show,zoom,preview,scr_height,cwidth,photos
+    global ram_frames,frames,menu,sd_hour,pf,vf,synced,Capture,show,zoom,preview,scr_height,cwidth,photos,old_cap
     menu = -1
     show = 0
     preview = 0
@@ -843,7 +841,6 @@ def main_menu():
     else:
          text(0,1,6,1,1,ss,12,0)
     pygame.draw.rect(windowSurfaceObj,(0,0,0),Rect(0,0,scr_width - bw,scr_height))
-    #pygame.display.update()
 
 # clear ram
 zpics = glob.glob('/run/shm/*.jpg')
@@ -886,8 +883,9 @@ if cam2 != "2":
         print("waiting...")
         poll = s.poll()
 
-cpu_temp = str(CPUTemperature()).split("=")
-temp = float(str(cpu_temp[1])[:-1])
+temp = 0
+#cpu_temp = str(CPUTemperature()).split("=")
+#temp = float(str(cpu_temp[1])[:-1])
 
 old_capture = Capture
 
@@ -909,6 +907,7 @@ while True:
         text(0,0,3,1,1,str(int(temp)),14,7)
     # fan (NOT Pi5 active cooler) and shutdown ctrl
     if time.monotonic() - fan_timer > fan_time:
+        fan_timer = time.monotonic()
         if trace == 1:
               print ("Step  FAN TIME")
         try:
@@ -1015,7 +1014,7 @@ while True:
     zpics = glob.glob('/run/shm/test*.jpg')
     while len(zpics) < pre_frames2:
         zpics = glob.glob('/run/shm/test*.jpg')
-    zpics.sort(reverse=True)
+    zpics.sort(reverse = True)
     if trace == 1:
         print ("READ IMAGE")
     # GET AN IMAGE
@@ -1024,7 +1023,7 @@ while True:
     w = len(zpics)
     for tt in range(pre_frames2,w):
         os.remove(zpics[tt])
-    del zpics[pre_frames2:w]
+    #del zpics[pre_frames2:w]
     # IF NOT IN SHOW MODE
     if show == 0 :
         if col_timer > 0 and time.monotonic() - col_timer > 3:
@@ -1032,8 +1031,6 @@ while True:
         if camera == 0 or camera == 1:
           image2 = pygame.surfarray.pixels3d(image)
           # CROP DETECTION AREA
-          #print(image2.shape)
-          #print(a2-h_crop2,a2+h_crop2,b2-v_crop2,b2+v_crop2)
           crop2 = image2[a2-h_crop2:a2+h_crop2,b2-v_crop2:b2+v_crop2]
           if trace == 1:
             print ("CROP ", crop2.size)
@@ -1166,7 +1163,7 @@ while True:
                     text(0,0,3,1,1,vf,14,4)
                 elif menu == -1 :
                     button(0,0,5)
-                    text(0,0,6,0,1,"CAPTURE",16,2)
+                    text(0,0,3,0,1,"CAPTURE",16,2)
                     vf = str(ram_frames) + " - " + str(frames)
                     if Pi == 5 and cam2 != "2":
                         vf = vf + " - " + str(len(photos))
@@ -1189,7 +1186,7 @@ while True:
 
             # external input triggers to RECORD
             if use_gpio == 1:
-                if (button_e_trig1.is_pressed or button_e_trig2.is_pressed):
+                if button_e_trig1.is_pressed or button_e_trig2.is_pressed:
                     record = 1
                 
             # detection of motion
@@ -1249,20 +1246,11 @@ while True:
                         led_s_trig.off()
                         led_s_focus.off()
                         
-                    # rename pre-frames
-                    if trace == 1:
-                        print ("Step 7 RENAME PRE")
-                    zpics.sort()
-                    for x in range(0,pre_frames):
-                        fxa = "00000" + str(fx)
-                        if os.path.exists(zpics[x]):
-                            os.rename(zpics[x],zpics[x][0:9] + timestamp + "_" + str(fxa[-5:]) + '.jpg')
-                            fx +=1
                     # rename new frames
                     if trace == 1:
                         print ("Step 8 RENAME NEW")
                     zpics = glob.glob('/run/shm/test*.jpg')
-                    zpics.sort()
+                    zpics.reverse()
                     if v_length < 1000:
                         count = int(fps*(v_length/1000))
                     else:
@@ -1523,13 +1511,31 @@ while True:
            oldimg[:] = gray[:]
         vidjr = 0
 
-        #if fcount < max_fcount and Pi != 5:
-        #    Capture = 0
-        #elif Pi != 5:
-        #   Capture = old_capture
-        #   if menu == -1:
-        #        text(0,9,3,0,1," ",14,7)
-        #        text(0,9,3,1,1," ",14,7)
+        if fcount < max_fcount and Pi != 5 and (Pi_Cam == 5 or Pi_Cam == 6) and v3_f_mode == 0:
+            Capture = 0
+            if menu == -1:
+                button(0,0,0)
+                text(0,0,0,0,1,"CAPTURE",16,7)
+                text(0,0,3,1,1,vf,14,7)
+                rep = 0
+        elif Pi != 5 and (Pi_Cam == 5 or Pi_Cam == 6) and rep == 0 and v3_f_mode == 0:
+            Capture = old_capture
+            if menu == -1:
+                if Capture == 1 and frames + ram_frames == 0:
+                    button(0,0,4)
+                    text(0,0,6,0,1,"CAPTURE",16,4)
+                    text(0,0,3,1,1,vf,14,4)
+                elif Capture == 1 and frames + ram_frames > 0:
+                    button(0,0,5)
+                    text(0,0,3,0,1,"CAPTURE",16,2)
+                    text(0,0,3,1,1,vf,14,2)
+                else:
+                    button(0,0,0)
+                    text(0,0,0,0,1,"CAPTURE",16,7)
+                    text(0,0,3,1,1,vf,14,7)
+                text(0,9,3,0,1," ",14,7)
+                text(0,9,3,1,1," ",14,7)
+            rep = 1
 
         # ARDUCAM AF
         if (Pi_Cam == 5 or Pi_Cam == 6) and v3_f_mode == 0 and fcount < max_fcount and Pi != 5:
@@ -1571,7 +1577,8 @@ while True:
             mousex, mousey = event.pos
             # set crop position
             if mousex < xwidth and zoom == 0 and ((menu != 7 or (Pi_Cam == 3 and v3_f_mode == 1)) or (Pi_Cam == 5 or Pi_Cam == 6)) and event.button != 3:
-                fcount = 0
+                if (Pi_Cam == 5 or Pi_Cam == 6):
+                    fcount = 0
                 a = mousex
                 b = mousey
                 if a + h_crop > xwidth:
@@ -1619,6 +1626,8 @@ while True:
                 fxy = ((d - 20) * 1.3333)/cheight
                 fxz = 50/cwidth
                 text(0,0,3,1,1,"Spot",14,7)
+                if trace == 1:
+                    print("v3 AUTO FOCUS POSN")
                 restart = 1
                 a = mousex
                 b = mousey
@@ -1645,8 +1654,8 @@ while True:
                 if g == 0 and menu == -1 :
                     # CAPTURE
                     Capture +=1
-                    if zoom > 0:
-                        restart = 1
+                    #if zoom > 0:
+                    #    restart = 1
                     zoom = 0
                     if Capture > 1:
                         Capture = 0
@@ -1659,8 +1668,6 @@ while True:
                         button(0,0,4)
                         text(0,0,6,0,1,"CAPTURE",16,4)
                         text(0,0,3,1,1,vf,14,4)
-
-                    
                     old_cap = Capture
                     save_config = 1
 
@@ -3140,7 +3147,7 @@ while True:
                         text(0,1,2,0,1,"Focus Manual",14,7)
                         if v3_focus == 0 and Pi_Cam == 3:
                             text(0,1,3,1,1,"inf",14,7)
-                        elif (Pi_Cam == 5 or Pi_cam == 6):
+                        elif (Pi_Cam == 5 or Pi_Cam == 6):
                             text(0,1,3,1,1,str(focus),14,7)
                         else:
                             fd = 1/(v3_focus/100)
@@ -3151,7 +3158,8 @@ while True:
                     fxx = 0
                     fxy = 0
                     fxz = 1
-                    fcount = 0
+                    if Pi_Cam == 5 or Pi_Cam == 6:
+                        fcount = 0
                     restart = 1
                     save_config = 1
 
@@ -3966,7 +3974,7 @@ while True:
                                 text(0,1,2,0,1,"Focus Manual",14,7)
                                 if v3_focus == 0 and Pi_Cam == 3:
                                     text(0,1,3,1,1,"inf",14,7)
-                                elif (Pi_Cam == 5 or Pi_cam == 6):
+                                elif (Pi_Cam == 5 or Pi_Cam == 6):
                                     text(0,1,3,1,1,str(focus),14,7)
                                 else:
                                     fd = 1/(v3_focus/100)
@@ -4144,7 +4152,6 @@ while True:
                             os.remove('mylist.txt')
                         txtvids = []
                         if menu == 8 and cam2 != "2":
-                            #print("restarting cam1")
                             restart2 = 1
                             camera = 0
                             restart = 1
