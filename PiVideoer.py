@@ -151,6 +151,7 @@ max_hq      = 650
 max_16mp    = 200
 max_64mp    = 435
 max_gs      = 15
+max_v9      = 15
 
 # setup directories
 Home_Files  = []
@@ -158,11 +159,11 @@ Home_Files.append(os.getlogin())
 pic     = "Pictures"
 pic_dir = "/home/" + Home_Files[0]+ "/" + pic + "/"
 
-cameras       = ['Unknown','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS','Arducam Owlsight']
-camids        = ['','ov5647','imx219','imx708','imx477','imx519','arduca','imx296','ov64a4']
-max_gains     = [64,     255,      40,      64,      88,      64,      64,      64,64]
-max_shutters  = [0,   max_v1, max_v2,   max_v3,  max_hq,max_16mp,max_64mp,  max_gs,max_64mp]
-mags          = [64,     255,      40,      64,      88,      64,      64,      64,64]
+cameras       = ['Unknown','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS','Arducam Owlsight','imx290']
+camids        = ['','ov5647','imx219','imx708','imx477','imx519','arduca','imx296','ov64a4','imx290']
+max_gains     = [64,     255,      40,      64,      88,      64,      64,      64,      64,    64]
+max_shutters  = [0,   max_v1, max_v2,   max_v3,  max_hq,max_16mp,max_64mp,  max_gs,max_64mp,max_v9]
+mags          = [64,     255,      40,      64,      88,      64,      64,      64,      64,    64]
 modes         = ['off','normal','sport']
 meters        = ['centre','spot','average']
 awbs          = ['off','auto','incandescent','tungsten','fluorescent','indoor','daylight','cloudy']
