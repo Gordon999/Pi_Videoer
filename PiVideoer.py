@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+
+"""Copyright (c) 2025
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."""
+
 import time
 import cv2
 import numpy as np
@@ -17,7 +35,7 @@ from gpiozero import PWMLED
 import sys
 import random
 
-version = "1.15"
+version = "1.16"
 
 # set screen size
 scr_width  = 800
@@ -142,28 +160,15 @@ old_foc       = 0
 min_foc       = 15
 rep           = 0
 
-# Camera max exposure (Note v1 is currently 1 second not the raspistill 6 seconds)
-# whatever value set it MUST be in shutters list !!
-max_v1      = 1
-max_v2      = 11
-max_v3      = 112
-max_hq      = 650
-max_16mp    = 200
-max_64mp    = 435
-max_gs      = 15
-max_v9      = 15
-
 # setup directories
 Home_Files  = []
 Home_Files.append(os.getlogin())
 pic     = "Pictures"
 pic_dir = "/home/" + Home_Files[0]+ "/" + pic + "/"
 
-cameras       = ['Unknown','Pi v1','Pi v2','Pi v3','Pi HQ','Arducam 16MP','Arducam 64MP','Pi GS','Arducam Owlsight','imx290']
-camids        = ['','ov5647','imx219','imx708','imx477','imx519','arduca','imx296','ov64a4','imx290']
-max_gains     = [64,     255,      40,      64,      88,      64,      64,      64,      64,    64]
-max_shutters  = [0,   max_v1, max_v2,   max_v3,  max_hq,max_16mp,max_64mp,  max_gs,max_64mp,max_v9]
-mags          = [64,     255,      40,      64,      88,      64,      64,      64,      64,    64]
+cameras       = ['', 'Pi v1', 'Pi v2', 'Pi v3', 'Pi HQ','Arducam 16MP','Arducam 64MP', 'Pi GS','Arducam Owlsight','imx290','imx500']
+camids        = ['','ov5647','imx219','imx708','imx477',      'imx519',      'arduca','imx296',          'ov64a4','imx290','imx500']
+max_gains     = [64,     255,      40,      64,      88,            64,            64,      64,                64,      64,      64]
 modes         = ['off','normal','sport']
 meters        = ['centre','spot','average']
 awbs          = ['off','auto','incandescent','tungsten','fluorescent','indoor','daylight','cloudy']
@@ -307,10 +312,8 @@ def Camera_Version():
   vheights = []
   cwidth = scr_width - bw
   cheight = scr_height
-  #print(camstxt)
   for x in range(0,len(camstxt)):
     # Determine if both cameras are the same model
-    #print(camstxt[x][4:10])
     if camstxt[x][0:4] == "0 : ":
         cam1 = camstxt[x][4:10]
     elif camstxt[x][0:4] == "1 : ":
@@ -600,6 +603,8 @@ def Camera0_start(wx,hx,zoom):
           rpistr +=" --exposure " + str(modes[mode2]) + " --framerate " + str(framerate2)
       rpistr += " --ev " + str(ev2) +  " --gain " + str(gain2)
       rpistr += " --width " + str(wx) + " --height " + str(hx)
+      if Pi_Cam == 3 :
+          rpistr += " --autofocus-mode continuous "
         
     #print (rpistr)
     p = subprocess.Popen(rpistr, shell=True, preexec_fn=os.setsid)
